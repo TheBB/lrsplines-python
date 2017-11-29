@@ -39,6 +39,14 @@ cdef extern from 'Element.h' namespace 'LR':
         HashSet_iterator[Basisfunction_*] supportEnd()
 
 cdef extern from 'LRSpline.h' namespace 'LR':
+    cdef enum parameterEdge:
+      NONE   =  0,
+      WEST   =  1,
+      EAST   =  2,
+      SOUTH  =  4,
+      NORTH  =  8,
+      TOP    = 16,
+      BOTTOM = 32
     cdef cppclass LRSpline_ 'LR::LRSpline':
         int dimension()
         int nVariate()
@@ -46,6 +54,7 @@ cdef extern from 'LRSpline.h' namespace 'LR':
         double startparam(int)
         double endparam(int)
         int order(int)
+        void getEdgeFunctions(vector[Basisfunction_*]& edgeFunctions, parameterEdge edge, int depth)
         vector[Element_*].iterator elementBegin()
         vector[Element_*].iterator elementEnd()
         HashSet_iterator[Basisfunction_*] basisBegin()
@@ -105,10 +114,19 @@ cdef class Element:
             yield bf
             preinc(it)
 
+cdef class ParameterEdge:
+  NONE   =  0
+  WEST   =  1
+  EAST   =  2
+  SOUTH  =  4
+  NORTH  =  8
+  TOP    = 16
+  BOTTOM = 32
 
 cdef class LRSplineObject:
 
     cdef LRSpline_* lr
+
 
     @property
     def dimension(self):
@@ -164,6 +182,17 @@ cdef class LRSplineObject:
             yield bf
             preinc(it)
 
+    def getEdgeFunctions(self, edge):
+        cdef vector[Basisfunction_*] bfs
+        self.lr.getEdgeFunctions(bfs, edge, 1)
+        it = bfs.begin()
+        res = []
+        while it != bfs.end():
+          bf = BasisFunction()
+          bf.bf = deref(it)
+          res.append(bf)
+          preinc(it)
+        return res
 
 cdef class LRSurface(LRSplineObject):
 
