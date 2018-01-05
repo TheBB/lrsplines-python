@@ -59,6 +59,8 @@ cdef extern from 'LRSpline.h' namespace 'LR':
         vector[Element_*].iterator elementEnd()
         HashSet_iterator[Basisfunction_*] basisBegin()
         HashSet_iterator[Basisfunction_*] basisEnd()
+        bool setControlPoints(vector[double]& cps)
+        void rebuildDimension(int dimvalue)
 
 cdef extern from 'LRSplineSurface.h' namespace 'LR':
     cdef cppclass LRSplineSurface_ 'LR::LRSplineSurface' (LRSpline_):
@@ -191,6 +193,14 @@ cdef class LRSplineObject:
             bf.bf = deref(it)
             yield bf
             preinc(it)
+
+    def set_controlpoints(self, cps):
+        assert len(cps) % len(self) == 0
+        self.lr.rebuildDimension(len(cps) // len(self))
+        cdef vector[double] vec_cps
+        vec_cps = list(cps)
+        self.lr.setControlPoints(cps)
+
 
 cdef class LRSurface(LRSplineObject):
 
