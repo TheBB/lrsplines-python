@@ -40,13 +40,13 @@ cdef extern from 'Element.h' namespace 'LR':
 
 cdef extern from 'LRSpline.h' namespace 'LR':
     cdef enum parameterEdge:
-      NONE   =  0,
-      WEST   =  1,
-      EAST   =  2,
-      SOUTH  =  4,
-      NORTH  =  8,
-      TOP    = 16,
-      BOTTOM = 32
+        NONE   =  0
+        WEST   =  1
+        EAST   =  2
+        SOUTH  =  4
+        NORTH  =  8
+        TOP    = 16
+        BOTTOM = 32
     cdef cppclass LRSpline_ 'LR::LRSpline':
         int dimension()
         int nVariate()
@@ -115,13 +115,13 @@ cdef class Element:
             preinc(it)
 
 cdef class ParameterEdge:
-  NONE   =  0
-  WEST   =  1
-  EAST   =  2
-  SOUTH  =  4
-  NORTH  =  8
-  TOP    = 16
-  BOTTOM = 32
+    NONE   =  0
+    WEST   =  1
+    EAST   =  2
+    SOUTH  =  4
+    NORTH  =  8
+    TOP    = 16
+    BOTTOM = 32
 
 cdef class LRSplineObject:
 
@@ -188,10 +188,10 @@ cdef class LRSplineObject:
         it = bfs.begin()
         res = []
         while it != bfs.end():
-          bf = BasisFunction()
-          bf.bf = deref(it)
-          res.append(bf)
-          preinc(it)
+            bf = BasisFunction()
+            bf.bf = deref(it)
+            res.append(bf)
+            preinc(it)
         return res
 
 cdef class LRSurface(LRSplineObject):
