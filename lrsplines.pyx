@@ -30,18 +30,18 @@ cdef extern from 'HashSet.h':
         bool equal(HashSet_iterator[T])
 
 cdef extern from 'Basisfunction.h' namespace 'LR':
-    cdef cppclass Basisfunction_ 'LR::Basisfunction':
+    cdef cppclass Basisfunction 'LR::Basisfunction':
         int getId()
         void getControlPoint(vector[double]&)
 
 cdef extern from 'Element.h' namespace 'LR':
-    cdef cppclass Element_ 'LR::Element':
+    cdef cppclass Element 'LR::Element':
         int getId()
         int getDim()
         double getParmin(int)
         double getParmax(int)
-        HashSet_iterator[Basisfunction_*] supportBegin()
-        HashSet_iterator[Basisfunction_*] supportEnd()
+        HashSet_iterator[Basisfunction*] supportBegin()
+        HashSet_iterator[Basisfunction*] supportEnd()
 
 cdef extern from 'LRSpline.h' namespace 'LR':
     cdef enum parameterEdge:
@@ -52,32 +52,41 @@ cdef extern from 'LRSpline.h' namespace 'LR':
         NORTH  =  8
         TOP    = 16
         BOTTOM = 32
-    cdef cppclass LRSpline_ 'LR::LRSpline':
+    cdef cppclass LRSpline 'LR::LRSpline':
         int dimension()
         int nVariate()
         int nBasisFunctions()
         double startparam(int)
         double endparam(int)
         int order(int)
-        void getEdgeFunctions(vector[Basisfunction_*]& edgeFunctions, parameterEdge edge, int depth)
-        vector[Element_*].iterator elementBegin()
-        vector[Element_*].iterator elementEnd()
-        HashSet_iterator[Basisfunction_*] basisBegin()
-        HashSet_iterator[Basisfunction_*] basisEnd()
+        void getEdgeFunctions(vector[Basisfunction*]& edgeFunctions, parameterEdge edge, int depth)
+        vector[Element*].iterator elementBegin()
+        vector[Element*].iterator elementEnd()
+        HashSet_iterator[Basisfunction*] basisBegin()
+        HashSet_iterator[Basisfunction*] basisEnd()
         bool setControlPoints(vector[double]& cps)
         void rebuildDimension(int dimvalue)
 
 cdef extern from 'LRSplineSurface.h' namespace 'LR':
-    cdef cppclass LRSplineSurface_ 'LR::LRSplineSurface' (LRSpline_):
-        LRSplineSurface() except +
-        void read(istream) except +
+    cdef cppclass LRSplineSurface 'LR::LRSplineSurface' (LRSpline):
+        LRSplineSurface()
+        LRSplineSurface(int n1, int n2, int order_u, int order_v)
+        void read(istream)
         void point(vector[double]& pt, double u, double v, int iEl) const
         void point(vector[vector[double]]& pts, double u, double v, int derivs, int iEl) const
+
+cdef extern from 'LRSplineVolume.h' namespace 'LR':
+    cdef cppclass LRSplineVolume 'LR::LRSplineVolume' (LRSpline):
+        LRSplineVolume()
+        LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v, int order_w)
+        void read(istream)
+        void point(vector[double]& pt, double u, double v, double w, int iEl) const
+        void point(vector[vector[double]]& pts, double u, double v, double w, int derivs, int iEl) const
 
 
 cdef class BasisFunction:
 
-    cdef Basisfunction_* bf
+    cdef Basisfunction* bf
 
     @property
     def id(self):
@@ -90,9 +99,9 @@ cdef class BasisFunction:
         return list(data)
 
 
-cdef class Element:
+cdef class pyElement:
 
-    cdef Element_* el
+    cdef Element* el
 
     @property
     def id(self):
@@ -115,8 +124,8 @@ cdef class Element:
         return self.el.getParmax(direction)
 
     def basis_functions(self):
-        cdef HashSet_iterator[Basisfunction_*] it = self.el.supportBegin()
-        cdef HashSet_iterator[Basisfunction_*] end = self.el.supportEnd()
+        cdef HashSet_iterator[Basisfunction*] it = self.el.supportBegin()
+        cdef HashSet_iterator[Basisfunction*] end = self.el.supportEnd()
         while not it.equal(end):
             bf = BasisFunction()
             bf.bf = deref(it)
@@ -136,12 +145,13 @@ cdef class ParameterEdge:
 
 cdef class LRSplineObject:
 
-    cdef LRSpline_* lr
+    cdef LRSpline* lr
 
     @property
     def pardim(self):
         return self.lr.nVariate()
 
+    @property
     def dimension(self):
         return self.lr.dimension()
 
@@ -173,17 +183,17 @@ cdef class LRSplineObject:
         return self.lr.order(direction)
 
     def elements(self):
-        cdef vector[Element_*].iterator it = self.lr.elementBegin()
-        cdef vector[Element_*].iterator end = self.lr.elementEnd()
+        cdef vector[Element*].iterator it = self.lr.elementBegin()
+        cdef vector[Element*].iterator end = self.lr.elementEnd()
         while it != end:
-            el = Element()
+            el = pyElement()
             el.el = deref(it)
             yield el
             preinc(it)
 
     def basis_functions(self):
-        cdef HashSet_iterator[Basisfunction_*] it = self.lr.basisBegin()
-        cdef HashSet_iterator[Basisfunction_*] end = self.lr.basisEnd()
+        cdef HashSet_iterator[Basisfunction*] it = self.lr.basisBegin()
+        cdef HashSet_iterator[Basisfunction*] end = self.lr.basisEnd()
         while not it.equal(end):
             bf = BasisFunction()
             bf.bf = deref(it)
@@ -191,7 +201,7 @@ cdef class LRSplineObject:
             preinc(it)
 
     def edge_functions(self, edge):
-        cdef vector[Basisfunction_*] bfs
+        cdef vector[Basisfunction*] bfs
         self.lr.getEdgeFunctions(bfs, edge, 1)
         it = bfs.begin()
         while it != bfs.end():
@@ -208,15 +218,19 @@ cdef class LRSplineObject:
         self.lr.setControlPoints(cps)
 
 
-cdef class LRSurface(LRSplineObject):
+cdef class Surface(LRSplineObject):
+
+    def __init__(self,n1,n2,p1,p2):
+        cdef LRSplineSurface* lr = new LRSplineSurface(n1,n2,p1,p2)
+        self.lr = lr
 
     @staticmethod
     def from_file(str filename):
         cdef ifstream* stream
-        cdef LRSplineSurface_* lr
+        cdef LRSplineSurface* lr
         stream = new ifstream(filename.encode())
-        lr = new LRSplineSurface_()
-        surf = LRSurface()
+        lr = new LRSplineSurface()
+        surf = Surface()
         if stream.is_open():
             lr.read(deref(stream))
             surf.lr = lr
@@ -230,18 +244,61 @@ cdef class LRSurface(LRSplineObject):
         cdef string cppstring = bytestring
         cdef istringstream* stream
         stream = new istringstream(cppstring)
-        cdef LRSplineSurface_* lr = new LRSplineSurface_()
+        cdef LRSplineSurface* lr = new LRSplineSurface()
         lr.read(deref(stream))
         del stream
-        surf = LRSurface()
+        surf = Surface()
         surf.lr = lr
         return surf
 
     def __call__(self, double u, double v, d=(0,0)):
         assert len(d) == 2
         derivs = sum(d)
-        cdef LRSplineSurface_* lr = <LRSplineSurface_*> self.lr
+        cdef LRSplineSurface* lr = <LRSplineSurface*> self.lr
         cdef vector[vector[double]] data
         lr.point(data, u, v, derivs, -1)
+        index = sum(dd + 1 for dd in range(derivs)) + d[1]
+        return list(data[index])
+
+
+cdef class Volume(LRSplineObject):
+
+    def __init__(self,n1,n2,n3,p1,p2,p3):
+        cdef LRSplineVolume* lr = new LRSplineVolume(n1,n2,n3,p1,p2,p3)
+        self.lr = lr
+
+    @staticmethod
+    def from_file(str filename):
+        cdef ifstream* stream
+        cdef LRSplineVolume* lr
+        stream = new ifstream(filename.encode())
+        lr = new LRSplineVolume()
+        vol = Volume()
+        if stream.is_open():
+            lr.read(deref(stream))
+            vol.lr = lr
+            stream.close()
+            del stream
+            return vol
+        raise FileNotFoundError()
+
+    @staticmethod
+    def from_bytes(bytes bytestring):
+        cdef string cppstring = bytestring
+        cdef istringstream* stream
+        stream = new istringstream(cppstring)
+        cdef LRSplineVolume* lr = new LRSplineVolume()
+        lr.read(deref(stream))
+        del stream
+        vol = Volume()
+        vol.lr = lr
+        return vol
+
+    def __call__(self, double u, double v, double w, d=(0,0,0)):
+        assert len(d) == 3
+        derivs = sum(d)
+        cdef LRSplineVolume* lr = <LRSplineVolume*> self.lr
+        cdef vector[vector[double]] data
+        lr.point(data, u, v, w, derivs, -1)
         index = sum(dd + 1 for dd in range(derivs)) + d[1]
         return list(data[index])
