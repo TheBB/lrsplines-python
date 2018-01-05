@@ -138,7 +138,6 @@ cdef class LRSplineObject:
     def pardim(self):
         return self.lr.nVariate()
 
-    @property
     def controlpoints(self):
         cps = np.empty((len(self), self.dimension))
         for i, bf in enumerate(self.basis_functions()):
