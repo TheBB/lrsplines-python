@@ -220,6 +220,7 @@ cdef class LRSurface(LRSplineObject):
             lr.read(deref(stream))
             surf.lr = lr
             stream.close()
+            del stream
             return surf
         raise FileNotFoundError()
 
