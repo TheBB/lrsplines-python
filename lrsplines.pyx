@@ -72,6 +72,7 @@ cdef extern from 'LRSplineSurface.h' namespace 'LR':
         LRSplineSurface() except +
         void read(istream) except +
         void point(vector[double]& pt, double u, double v, int iEl) const
+        void point(vector[vector[double]]& pts, double u, double v, int derivs, int iEl) const
 
 
 cdef class BasisFunction:
@@ -241,3 +242,12 @@ cdef class LRSurface(LRSplineObject):
         cdef vector[double] data
         lr.point(data, u, v, -1)
         return list(data)
+
+    def derivative(self, double u, double v, d):
+        assert len(d) == 2
+        derivs = sum(d)
+        cdef LRSplineSurface_* lr = <LRSplineSurface_*> self.lr
+        cdef vector[vector[double]] data
+        lr.point(data, u, v, derivs, -1)
+        index = sum(dd + 1 for dd in range(derivs)) + d[1]
+        return list(data[index])
