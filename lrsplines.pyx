@@ -149,9 +149,9 @@ cdef class LRSplineObject:
 
     def start(self, direction=None):
         if direction is None:
-            return tuple(self.el.startparam(i) for i in range(self.pardim))
+            return tuple(self.lr.startparam(i) for i in range(self.pardim))
         direction = check_direction(direction, self.pardim)
-        return self.el.startparam(direction)
+        return self.lr.startparam(direction)
 
     def end(self, direction=None):
         if direction is None:
