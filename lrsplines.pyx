@@ -114,6 +114,7 @@ cdef class Element:
             yield bf
             preinc(it)
 
+
 cdef class ParameterEdge:
     NONE   =  0
     WEST   =  1
@@ -123,10 +124,10 @@ cdef class ParameterEdge:
     TOP    = 16
     BOTTOM = 32
 
+
 cdef class LRSplineObject:
 
     cdef LRSpline_* lr
-
 
     @property
     def dimension(self):
