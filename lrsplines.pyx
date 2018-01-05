@@ -131,15 +131,14 @@ cdef class LRSplineObject:
     cdef LRSpline_* lr
 
     @property
-    def dimension(self):
-        return self.lr.dimension()
-
-    @property
     def pardim(self):
         return self.lr.nVariate()
 
+    def dimension(self):
+        return self.lr.dimension()
+
     def controlpoints(self):
-        cps = np.empty((len(self), self.dimension))
+        cps = np.empty((len(self), self.dimension()))
         for i, bf in enumerate(self.basis_functions()):
             cps[i,:] = bf.controlpoint
         return cps
