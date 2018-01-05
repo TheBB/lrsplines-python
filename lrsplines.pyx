@@ -182,17 +182,15 @@ cdef class LRSplineObject:
             yield bf
             preinc(it)
 
-    def getEdgeFunctions(self, edge):
+    def edge_functions(self, edge):
         cdef vector[Basisfunction_*] bfs
         self.lr.getEdgeFunctions(bfs, edge, 1)
         it = bfs.begin()
-        res = []
         while it != bfs.end():
             bf = BasisFunction()
             bf.bf = deref(it)
-            res.append(bf)
+            yield bf
             preinc(it)
-        return res
 
 cdef class LRSurface(LRSplineObject):
 
