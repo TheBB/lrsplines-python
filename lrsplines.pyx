@@ -2,6 +2,7 @@
 
 from libcpp cimport bool
 from libcpp.vector cimport vector
+from libcpp.string cimport string
 from cython.operator cimport dereference as deref, preincrement as preinc
 
 import numpy as np
@@ -17,6 +18,10 @@ cdef extern from '<fstream>' namespace 'std':
         ifstream(const char *) except +
         bool is_open()
         void close()
+
+cdef extern from '<sstream>' namespace 'std':
+    cdef cppclass istringstream(istream):
+        istringstream(const string& str) except +
 
 cdef extern from 'HashSet.h':
     cdef cppclass HashSet_iterator[T]:
@@ -217,6 +222,18 @@ cdef class LRSurface(LRSplineObject):
             stream.close()
             return surf
         raise FileNotFoundError()
+
+    @staticmethod
+    def from_bytes(bytes bytestring):
+        cdef string cppstring = bytestring
+        cdef istringstream* stream
+        stream = new istringstream(cppstring)
+        cdef LRSplineSurface_* lr = new LRSplineSurface_()
+        lr.read(deref(stream))
+        del stream
+        surf = LRSurface()
+        surf.lr = lr
+        return surf
 
     def __call__(self, double u, double v):
         cdef LRSplineSurface_* lr = <LRSplineSurface_*> self.lr
