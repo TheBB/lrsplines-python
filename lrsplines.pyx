@@ -64,6 +64,7 @@ cdef extern from 'LRSplineSurface.h' namespace 'LR':
     cdef cppclass LRSplineSurface_ 'LR::LRSplineSurface' (LRSpline_):
         LRSplineSurface() except +
         void read(istream) except +
+        void point(vector[double]& pt, double u, double v, int iEl) const
 
 
 cdef class BasisFunction:
@@ -208,3 +209,9 @@ cdef class LRSurface(LRSplineObject):
             stream.close()
             return surf
         raise FileNotFoundError()
+
+    def __call__(self, double u, double v):
+        cdef LRSplineSurface_* lr = <LRSplineSurface_*> self.lr
+        cdef vector[double] data
+        lr.point(data, u, v, -1)
+        return list(data)
