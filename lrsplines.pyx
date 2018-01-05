@@ -237,13 +237,7 @@ cdef class LRSurface(LRSplineObject):
         surf.lr = lr
         return surf
 
-    def __call__(self, double u, double v):
-        cdef LRSplineSurface_* lr = <LRSplineSurface_*> self.lr
-        cdef vector[double] data
-        lr.point(data, u, v, -1)
-        return list(data)
-
-    def derivative(self, double u, double v, d):
+    def __call__(self, double u, double v, d=(0,0)):
         assert len(d) == 2
         derivs = sum(d)
         cdef LRSplineSurface_* lr = <LRSplineSurface_*> self.lr
