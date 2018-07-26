@@ -153,7 +153,7 @@ cdef class LRSplineObject:
 
     @property
     def controlpoints(self):
-        cps = np.empty((len(self), self.dimension()))
+        cps = np.empty((len(self), self.dimension))
         for i, bf in enumerate(self.basis_functions()):
             cps[i,:] = bf.controlpoint
         return cps
