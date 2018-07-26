@@ -146,6 +146,9 @@ cdef class LRSplineObject:
     def dimension(self):
         return self.lr.dimension()
 
+    def set_dimension(self, dim):
+        self.lr.rebuildDimension(dim)
+
     @property
     def controlpoints(self):
         cps = np.empty((len(self), self.dimension()))
@@ -208,6 +211,14 @@ cdef class LRSplineObject:
         cdef vector[double] vec_cps
         vec_cps = list(cps)
         self.lr.setControlPoints(cps)
+
+    def corners(self):
+        return [
+            next(self.edge_functions(ParameterEdge.SOUTH | ParameterEdge.WEST)).controlpoint,
+            next(self.edge_functions(ParameterEdge.SOUTH | ParameterEdge.EAST)).controlpoint,
+            next(self.edge_functions(ParameterEdge.NORTH | ParameterEdge.WEST)).controlpoint,
+            next(self.edge_functions(ParameterEdge.NORTH | ParameterEdge.EAST)).controlpoint,
+        ]
 
 
 cdef class LRSurface(LRSplineObject):
