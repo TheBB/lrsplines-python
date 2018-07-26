@@ -70,6 +70,7 @@ cdef extern from 'LRSpline.h' namespace 'LR':
 cdef extern from 'LRSplineSurface.h' namespace 'LR':
     cdef cppclass LRSplineSurface_ 'LR::LRSplineSurface' (LRSpline_):
         LRSplineSurface() except +
+        LRSplineSurface_* copy()
         void read(istream) except +
         void point(vector[double]& pt, double u, double v, int iEl) const
         void point(vector[vector[double]]& pts, double u, double v, int derivs, int iEl) const
@@ -248,6 +249,13 @@ cdef class LRSurface(LRSplineObject):
         del stream
         surf = LRSurface()
         surf.lr = lr
+        return surf
+
+    def clone(self):
+        cdef LRSplineSurface_* lr = <LRSplineSurface_*> self.lr
+        cdef LRSplineSurface_* copy = lr.copy()
+        surf = LRSurface()
+        surf.lr = copy
         return surf
 
     def __call__(self, double u, double v, d=(0,0)):
