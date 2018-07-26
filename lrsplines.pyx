@@ -74,6 +74,7 @@ cdef extern from 'LRSplineSurface.h' namespace 'LR':
         void read(istream) except +
         void point(vector[double]& pt, double u, double v, int iEl) const
         void point(vector[vector[double]]& pts, double u, double v, int derivs, int iEl) const
+        void getGlobalUniqueKnotVector(vector[double]& knot_u, vector[double]& knot_v) const
 
 
 cdef class BasisFunction:
@@ -257,6 +258,13 @@ cdef class LRSurface(LRSplineObject):
         surf = LRSurface()
         surf.lr = copy
         return surf
+
+    def knots(self):
+        cdef vector[double] knots_u
+        cdef vector[double] knots_v
+        cdef LRSplineSurface_* lr = <LRSplineSurface_*> self.lr
+        lr.getGlobalUniqueKnotVector(knots_u, knots_v)
+        return (tuple(knots_u), tuple(knots_v))
 
     def __call__(self, double u, double v, d=(0,0)):
         assert len(d) == 2
