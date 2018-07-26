@@ -37,6 +37,7 @@ setup(
         library_dirs=[path.join(BUILDPATH, 'lib')],
         include_dirs=[path.join(LRSPLINES, 'include', 'LRSpline')],
         libraries=['LRSpline'],
+        extra_compile_args=['-std=c++11'],
     )),
     install_requires=['numpy'],
     cmdclass={'build_ext': CustomBuild},
