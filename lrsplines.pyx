@@ -12,10 +12,16 @@ from splipy.utils import check_direction
 cdef extern from '<iostream>' namespace 'std':
     cdef cppclass istream:
         pass
+    cdef cppclass ostream:
+        pass
 
 cdef extern from '<fstream>' namespace 'std':
     cdef cppclass ifstream(istream):
         ifstream(const char *) except +
+        bool is_open()
+        void close()
+    cdef cppclass ofstream(ostream):
+        ofstream(const char *) except +
         bool is_open()
         void close()
 
@@ -82,6 +88,7 @@ cdef extern from 'LRSplineSurface.h' namespace 'LR':
         LRSplineSurface() except +
         LRSplineSurface_* copy()
         void read(istream) except +
+        void write(ostream) except +
         void point(vector[double]& pt, double u, double v, int iEl) const
         void point(vector[vector[double]]& pts, double u, double v, int derivs, int iEl) const
         void getGlobalUniqueKnotVector(vector[double]& knot_u, vector[double]& knot_v) const
@@ -288,6 +295,14 @@ cdef class LRSurface(LRSplineObject):
         surf = LRSurface()
         surf.lr = lr
         return surf
+
+    def to_file(self, str filename):
+        cdef ofstream* stream
+        cdef LRSplineSurface_* lr = <LRSplineSurface_*> self.lr
+        stream = new ofstream(filename.encode())
+        if stream.is_open():
+            lr.write(deref(stream))
+            stream.close()
 
     def clone(self):
         cdef LRSplineSurface_* lr = <LRSplineSurface_*> self.lr
