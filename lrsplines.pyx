@@ -39,6 +39,7 @@ cdef extern from 'Basisfunction.h' namespace 'LR':
     cdef cppclass Basisfunction_ 'LR::Basisfunction':
         int getId()
         void getControlPoint(vector[double]&)
+        double evaluate(double u, double v, bool u_from_right, bool v_from_right) const
 
 cdef extern from 'Element.h' namespace 'LR':
     cdef cppclass Element_ 'LR::Element':
@@ -109,6 +110,9 @@ cdef class BasisFunction:
         cdef vector[double] data
         self.bf.getControlPoint(data)
         return list(data)
+
+    def __call__(self, double u, double v, bool u_from_right = True, bool v_from_right = True):
+        return self.bf.evaluate(u, v, u_from_right, v_from_right)
 
 
 cdef class Element:
