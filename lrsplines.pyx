@@ -43,6 +43,14 @@ cdef extern from 'Element.h' namespace 'LR':
         HashSet_iterator[Basisfunction_*] supportBegin()
         HashSet_iterator[Basisfunction_*] supportEnd()
 
+cdef extern from 'Meshline.h' namespace 'LR':
+    cdef cppclass Meshline_ 'LR::Meshline':
+        bool is_spanning_u()
+        double const_par_
+        double start_
+        double stop_
+        int multiplicity_
+
 cdef extern from 'LRSpline.h' namespace 'LR':
     cdef enum parameterEdge:
         NONE   =  0
@@ -64,6 +72,8 @@ cdef extern from 'LRSpline.h' namespace 'LR':
         vector[Element_*].iterator elementEnd()
         HashSet_iterator[Basisfunction_*] basisBegin()
         HashSet_iterator[Basisfunction_*] basisEnd()
+        vector[Meshline_*].iterator meshlineBegin()
+        vector[Meshline_*].iterator meshlineEnd()
         bool setControlPoints(vector[double]& cps)
         void rebuildDimension(int dimvalue)
 
@@ -75,6 +85,8 @@ cdef extern from 'LRSplineSurface.h' namespace 'LR':
         void point(vector[double]& pt, double u, double v, int iEl) const
         void point(vector[vector[double]]& pts, double u, double v, int derivs, int iEl) const
         void getGlobalUniqueKnotVector(vector[double]& knot_u, vector[double]& knot_v) const
+        Meshline_* insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity)
+        Meshline_* insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity)
 
 
 cdef class BasisFunction:
@@ -124,6 +136,31 @@ cdef class Element:
             bf.bf = deref(it)
             yield bf
             preinc(it)
+
+
+cdef class Meshline:
+
+    cdef Meshline_* ml
+
+    @property
+    def is_spanning_u(self):
+        return self.ml.is_spanning_u()
+
+    @property
+    def const_par(self):
+        return self.ml.const_par_
+
+    @property
+    def start(self):
+        return self.ml.start_
+
+    @property
+    def stop(self):
+        return self.ml.stop_
+
+    @property
+    def multiplicity(self):
+        return self.ml.multiplicity_
 
 
 cdef class ParameterEdge:
@@ -274,3 +311,21 @@ cdef class LRSurface(LRSplineObject):
         lr.point(data, u, v, derivs, -1)
         index = sum(dd + 1 for dd in range(derivs)) + d[1]
         return list(data[index])
+
+    def meshlines(self):
+        cdef LRSplineSurface_* lr = <LRSplineSurface_*> self.lr
+        cdef vector[Meshline_*].iterator it = lr.meshlineBegin()
+        cdef vector[Meshline_*].iterator end = lr.meshlineEnd()
+        while it != end:
+            ml = Meshline()
+            ml.ml = deref(it)
+            yield ml
+            preinc(it)
+
+    def insert_const_u_edge(self, double u, double start_v, double stop_v, int multiplicity=1):
+        cdef LRSplineSurface_* lr = <LRSplineSurface_*> self.lr
+        lr.insert_const_u_edge(u, start_v, stop_v, multiplicity)
+
+    def insert_const_v_edge(self, double v, double start_u, double stop_u, int multiplicity=1):
+        cdef LRSplineSurface_* lr = <LRSplineSurface_*> self.lr
+        lr.insert_const_v_edge(v, start_u, stop_u, multiplicity)
