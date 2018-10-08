@@ -97,6 +97,9 @@ cdef extern from 'LRSplineSurface.h' namespace 'LR':
         void getGlobalUniqueKnotVector(vector[double]& knot_u, vector[double]& knot_v) const
         Meshline_* insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity)
         Meshline_* insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity)
+        void writePostscriptElements(ostream, int, int, bool, vector[int]*) const
+        void writePostscriptMesh(ostream, bool, vector[int]*) const
+        void writePostscriptMeshWithControlPoints(ostream, int, int) const
 
 
 cdef class BasisFunction:
@@ -320,6 +323,16 @@ cdef class LRSurface(LRSplineObject):
         if stream.is_open():
             lr.write(deref(stream))
             stream.close()
+        del stream
+
+    def to_postscript(self, str filename):
+        cdef ofstream* stream
+        cdef LRSplineSurface_* lr = <LRSplineSurface_*> self.lr
+        stream = new ofstream(filename.encode())
+        if stream.is_open():
+            lr.writePostscriptElements(deref(stream), 2, 2, True, NULL)
+            stream.close()
+        del stream
 
     def clone(self):
         cdef LRSplineSurface_* lr = <LRSplineSurface_*> self.lr
