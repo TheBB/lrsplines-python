@@ -39,7 +39,9 @@ cdef extern from 'Basisfunction.h' namespace 'LR':
     cdef cppclass Basisfunction_ 'LR::Basisfunction':
         int getId()
         void getControlPoint(vector[double]&)
+        int nVariate() const
         double evaluate(double u, double v, bool u_from_right, bool v_from_right) const
+        void evaluate(vector[double]& results, double u, double v, int derivs, bool u_from_right, bool v_from_right) const
 
 cdef extern from 'Element.h' namespace 'LR':
     cdef cppclass Element_ 'LR::Element':
@@ -111,9 +113,20 @@ cdef class BasisFunction:
         self.bf.getControlPoint(data)
         return list(data)
 
-    def __call__(self, double u, double v, bool u_from_right = True, bool v_from_right = True):
-        return self.bf.evaluate(u, v, u_from_right, v_from_right)
+    @property
+    def nvariate(self):
+        return self.bf.nVariate()
 
+    # TODO: Implement for trivariate
+    def __call__(self, double u, double v, d=None):
+        if d is None:
+            return self.bf.evaluate(u, v, <bool> True, <bool> True)
+        assert len(d) == 2
+        derivs = sum(d)
+        index = derivs * (derivs + 1) // 2 + d[1]
+        cdef vector[double] results
+        self.bf.evaluate(results, u, v, <int> derivs, <bool> True, <bool> True)
+        return results[index]
 
 cdef class Element:
 
