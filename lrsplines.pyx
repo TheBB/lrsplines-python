@@ -132,6 +132,7 @@ cdef class BasisFunction:
         self.bf.evaluate(results, u, v, <int> derivs, <bool> True, <bool> True)
         return results[index]
 
+
 cdef class Element:
 
     cdef Element_* el
@@ -204,6 +205,10 @@ cdef class ParameterEdge:
 cdef class LRSplineObject:
 
     cdef LRSpline_* lr
+
+    def __del__(self):
+        if self.lr:
+            del self.lr
 
     @property
     def pardim(self):
