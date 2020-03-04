@@ -76,6 +76,7 @@ cdef extern from 'LRSpline.h' namespace 'LR':
         double startparam(int)
         double endparam(int)
         int order(int)
+        void generateIDs()
         void getEdgeFunctions(vector[Basisfunction_*]& edgeFunctions, parameterEdge edge, int depth)
         vector[Element_*].iterator elementBegin()
         vector[Element_*].iterator elementEnd()
@@ -285,6 +286,9 @@ cdef class LRSplineObject:
             next(self.edge_functions(ParameterEdge.NORTH | ParameterEdge.WEST)).controlpoint,
             next(self.edge_functions(ParameterEdge.NORTH | ParameterEdge.EAST)).controlpoint,
         ]
+
+    def generate_ids(self):
+        self.lr.generateIDs()
 
 
 cdef class LRSurface(LRSplineObject):
