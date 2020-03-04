@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from setuptools import setup
+from setuptools import setup, find_packages
 from setuptools.command.build_ext import build_ext
 from distutils.extension import Extension
 from subprocess import run
@@ -27,18 +27,29 @@ class CustomBuild(build_ext):
 
 setup(
     name='LRSplines',
-    version='0.0.1',
+    version='0.1',
     description='Python bindings for the LRSplines library',
     maintainer='Eivind Fonn',
     maintainer_email='eivind.fonn@sintef.no',
-    ext_modules=cythonize(Extension(
-        'lrsplines',
-        ['lrsplines.pyx'],
-        library_dirs=[path.join(BUILDPATH, 'lib')],
-        include_dirs=[path.join(LRSPLINES, 'include', 'LRSpline')],
-        libraries=['LRSpline'],
-        extra_compile_args=['-std=c++11'],
-    )),
+    packages=find_packages(),
+    ext_modules=cythonize([
+        Extension(
+            'lrsplines',
+            ['lrsplines.pyx'],
+            library_dirs=[path.join(BUILDPATH, 'lib')],
+            include_dirs=[path.join(LRSPLINES, 'include', 'LRSpline')],
+            libraries=['LRSpline'],
+            extra_compile_args=['-std=c++11'],
+        ),
+        Extension(
+            'lrspline.raw',
+            ['lrspline/raw.pyx'],
+            library_dirs=[path.join(BUILDPATH, 'lib')],
+            include_dirs=[path.join(LRSPLINES, 'include', 'LRSpline')],
+            libraries=['LRSpline'],
+            extra_compile_args=['-std=c++11'],
+        )
+    ]),
     install_requires=['numpy'],
     cmdclass={'build_ext': CustomBuild},
 )
