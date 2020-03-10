@@ -2,7 +2,7 @@ language: shell
 
 env:
   global:
-    - CIBW_SKIP="cp27*"
+    - CIBW_SKIP="cp27* cp35*"
     - CIBW_BEFORE_BUILD="pip install cython numpy"
     - TWINE_USERNAME=__token__
     # TWINE_PASSWORD should be set to an API token in the Travis settings
@@ -60,4 +60,4 @@ jobs:
 notifications:
   email:
     on_success: never
-    on_failure: always
+    on_failure: never

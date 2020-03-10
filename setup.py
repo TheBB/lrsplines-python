@@ -9,20 +9,13 @@ from Cython.Build import cythonize
 
 
 LRSPLINES = path.abspath(path.join(path.dirname(__file__), 'submodules', 'LRSplines'))
-BUILDPATH = path.join(LRSPLINES, 'build')
-
-
-class CustomBuild(build_ext):
-
-    def run(self):
-        makedirs(BUILDPATH, exist_ok=True)
-        run(['cmake', '..',
-             '-DCMAKE_BUILD_TYPE=Release',
-             '-DCMAKE_POSITION_INDEPENDENT_CODE=1',
-             '-DBUILD_SHARED_LIBS=0'],
-            cwd=BUILDPATH)
-        run(['make'], cwd=BUILDPATH)
-        super().run()
+SOURCES = [
+    'submodules/LRSplines/src/Basisfunction.cpp',
+    'submodules/LRSplines/src/Element.cpp',
+    'submodules/LRSplines/src/Meshline.cpp',
+    'submodules/LRSplines/src/LRSpline.cpp',
+    'submodules/LRSplines/src/LRSplineSurface.cpp',
+]
 
 
 setup(
@@ -35,21 +28,16 @@ setup(
     ext_modules=cythonize([
         Extension(
             'lrsplines',
-            ['lrsplines.pyx'],
-            library_dirs=[path.join(BUILDPATH, 'lib')],
-            include_dirs=[path.join(LRSPLINES, 'include', 'LRSpline')],
-            libraries=['LRSpline'],
+            ['lrsplines.pyx', *SOURCES],
+            include_dirs=[path.join(LRSPLINES, 'include')],
             extra_compile_args=['-std=c++11'],
         ),
         Extension(
             'lrspline.raw',
-            ['lrspline/raw.pyx'],
-            library_dirs=[path.join(BUILDPATH, 'lib')],
-            include_dirs=[path.join(LRSPLINES, 'include', 'LRSpline')],
-            libraries=['LRSpline'],
+            ['lrspline/raw.pyx', *SOURCES],
+            include_dirs=[path.join(LRSPLINES, 'include')],
             extra_compile_args=['-std=c++11'],
         )
     ]),
     install_requires=['numpy'],
-    cmdclass={'build_ext': CustomBuild},
 )

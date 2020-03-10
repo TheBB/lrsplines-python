@@ -22,13 +22,13 @@ cdef extern from '<sstream>' namespace 'std':
         ostringstream() except +
         string str()
 
-cdef extern from 'HashSet.h':
+cdef extern from 'LRSpline/HashSet.h':
     cdef cppclass HashSet_iterator[T]:
         T operator*()
         HashSet_iterator[T] operator++()
         bool equal(HashSet_iterator[T])
 
-cdef extern from 'Basisfunction.h' namespace 'LR':
+cdef extern from 'LRSpline/Basisfunction.h' namespace 'LR':
     cdef cppclass Basisfunction_ 'LR::Basisfunction':
         int getId()
         void getControlPoint(vector[double]&)
@@ -38,7 +38,7 @@ cdef extern from 'Basisfunction.h' namespace 'LR':
         double evaluate(double u, double v, double w, bool u_from_right, bool v_from_right, bool w_from_right) const
         void evaluate(vector[double]& results, double u, double v, double w, int derivs, bool u_from_right, bool v_from_right, bool w_from_right) const
 
-cdef extern from 'Element.h' namespace 'LR':
+cdef extern from 'LRSpline/Element.h' namespace 'LR':
     cdef cppclass Element_ 'LR::Element':
         int getId()
         int getDim()
@@ -47,7 +47,7 @@ cdef extern from 'Element.h' namespace 'LR':
         HashSet_iterator[Basisfunction_*] supportBegin()
         HashSet_iterator[Basisfunction_*] supportEnd()
 
-cdef extern from 'Meshline.h' namespace 'LR':
+cdef extern from 'LRSpline/Meshline.h' namespace 'LR':
     cdef cppclass Meshline_ 'LR::Meshline':
         bool is_spanning_u()
         double const_par_
@@ -55,7 +55,7 @@ cdef extern from 'Meshline.h' namespace 'LR':
         double stop_
         int multiplicity_
 
-cdef extern from 'LRSpline.h' namespace 'LR':
+cdef extern from 'LRSpline/LRSpline.h' namespace 'LR':
     cdef enum parameterEdge_ 'LR::parameterEdge':
         NONE
         WEST
@@ -83,7 +83,7 @@ cdef extern from 'LRSpline.h' namespace 'LR':
         bool setControlPoints(vector[double]& cps)
         void rebuildDimension(int dimvalue)
 
-cdef extern from 'LRSplineSurface.h' namespace 'LR':
+cdef extern from 'LRSpline/LRSplineSurface.h' namespace 'LR':
     cdef cppclass LRSplineSurface_ 'LR::LRSplineSurface' (LRSpline_):
         LRSplineSurface() except +
         LRSplineSurface_* copy()
