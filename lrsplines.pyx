@@ -6,7 +6,14 @@ from libcpp.string cimport string
 from cython.operator cimport dereference as deref, preincrement as preinc
 
 import numpy as np
-from splipy.utils import check_direction
+def check_direction(direction, pardim):
+    if direction in {0, 'u', 'U'} and 0 < pardim:
+        return 0
+    elif direction in {1, 'v', 'V'} and 1 < pardim:
+        return 1
+    elif direction in {2, 'w', 'W'} and 2 < pardim:
+        return 2
+    raise ValueError('Invalid direction')
 
 
 cdef extern from '<iostream>' namespace 'std':

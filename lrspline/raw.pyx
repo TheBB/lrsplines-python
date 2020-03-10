@@ -7,9 +7,6 @@ from libcpp.string cimport string
 from cython.operator cimport dereference as deref, preincrement as preinc
 
 import numpy as np
-from splipy.utils import check_direction
-
-
 cdef extern from '<iostream>' namespace 'std':
     cdef cppclass istream:
         pass
