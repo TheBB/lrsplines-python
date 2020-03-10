@@ -269,12 +269,12 @@ cdef class LRSurface(LRSplineObject):
 
     def read(self, stream):
         cdef string cppstring
+        if hasattr(stream, 'read'):
+            stream = stream.read()
         if isinstance(stream, str):
             cppstring = stream.encode()
         elif isinstance(stream, bytes):
             cppstring = stream
-        else:
-            cppstring = stream.read().encode()
         cdef istringstream* cppstream
         cppstream = new istringstream(cppstring)
         (<LRSplineSurface_*> self.w).read(deref(cppstream))
