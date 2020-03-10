@@ -19,7 +19,7 @@ os:
 stages:
   - test
   - name: deploy
-    if: tag IS PRESENT AND repo = TheBB/lrsplines
+    # if: tag IS PRESENT AND repo = TheBB/lrsplines
 
 before_install:
   - source ./ci/before_install.sh
@@ -60,4 +60,4 @@ jobs:
 notifications:
   email:
     on_success: never
-    on_failure: always
+    on_failure: never
