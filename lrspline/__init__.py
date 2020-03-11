@@ -185,6 +185,10 @@ class LRSplineObject:
         for w in self.w.basisIter():
             yield BasisFunction(self, w)
 
+    @property
+    def nelements(self):
+        return self.w.nElements()
+
     def elements(self):
         for w in self.w.elementIter():
             yield Element(self, w)

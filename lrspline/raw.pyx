@@ -66,6 +66,7 @@ cdef extern from 'LRSpline.h' namespace 'LR':
         int dimension()
         int nVariate()
         int nBasisFunctions()
+        int nElements()
         double startparam(int)
         double endparam(int)
         int order(int)
@@ -210,6 +211,9 @@ cdef class LRSplineObject:
 
     def nBasisFunctions(self):
         return self.w.nBasisFunctions()
+
+    def nElements(self):
+        return self.w.nElements()
 
     def startparam(self, i):
         return self.w.startparam(i)
