@@ -82,6 +82,10 @@ class Element(SimpleWrapper):
         direction = check_direction(direction, self.pardim)
         return (self.w.getParmin(direction), self.w.getParmax(direction))
 
+    def support(self):
+        for w in self.w.supportIter():
+            yield BasisFunction(self.lr, w)
+
 
 class MeshInterface(SimpleWrapper):
 
