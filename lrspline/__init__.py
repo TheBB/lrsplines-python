@@ -37,6 +37,21 @@ class BasisFunction(SimpleWrapper):
     def nvariate(self):
         return self.w.nVariate()
 
+    def evaluate(self, u, v):
+        retval = np.array([self.w.evaluate(up, vp, True, True) for up, vp in zip(u.flat, v.flat)])
+        return retval.reshape(u.shape)
+
+    def derivative(self, u, v, d=(1,1)):
+        nderivs = sum(d)
+        index = nderivs * (nderivs + 1) // 2 + d[1]
+        retval = np.array([
+            self.w.evaluate(up, vp, nderivs, True, True)[index]
+            for up, vp in zip(u.flat, v.flat)
+        ])
+        return retval.reshape(u.shape)
+
+    __call__ = evaluate
+
 
 class Element(SimpleWrapper):
 
@@ -268,3 +283,18 @@ class LRSplineSurface(LRSplineObject):
             self.w.insert_const_u_edge(value, start, end, multiplicity)
         else:
             self.w.insert_const_v_edge(value, start, end, multiplicity)
+
+    def evaluate(self, u, v, iel=-1):
+        retval = np.array([self.w.point(up, vp, iEl=iel) for up, vp in zip(u.flat, v.flat)])
+        return retval.reshape(u.shape)
+
+    def derivative(self, u, v, d=(1,1), iel=-1):
+        nderivs = sum(d)
+        index = sum(dd + 1 for dd in range(nderivs)) + d[1]
+        retval = []
+        for up, vp in zip(u.flat, v.flat):
+            r = self.w.point(up, vp, nderivs, iEl=iel)
+            retval.append(r[index])
+        return np.array(retval).reshape(u.shape)
+
+    __call__ = evaluate
