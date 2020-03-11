@@ -185,6 +185,21 @@ class LRSplineObject:
         for w in self.w.basisIter():
             yield BasisFunction(self, w)
 
+    def edge(self, *args):
+        side = raw.parameterEdge.NONE
+        for arg in args:
+            side |= {
+                'west': raw.parameterEdge.WEST,
+                'east': raw.parameterEdge.EAST,
+                'south': raw.parameterEdge.SOUTH,
+                'north': raw.parameterEdge.NORTH,
+                'top': raw.parameterEdge.TOP,
+                'bottom': raw.parameterEdge.BOTTOM,
+            }[arg]
+
+        for w in self.w.getEdgeFunctionsIter(side):
+            yield BasisFunction(self, w)
+
     @property
     def nelements(self):
         return self.w.nElements()
