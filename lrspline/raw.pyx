@@ -7,6 +7,8 @@ from libcpp.string cimport string
 from cython.operator cimport dereference as deref, preincrement as preinc
 
 import numpy as np
+
+
 cdef extern from '<iostream>' namespace 'std':
     cdef cppclass istream:
         pass
