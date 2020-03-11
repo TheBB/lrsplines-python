@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from pathlib import Path
 from setuptools import setup, find_packages
 from setuptools.command.build_ext import build_ext
 from distutils.extension import Extension
@@ -17,13 +18,20 @@ SOURCES = [
     'submodules/LRSplines/src/LRSplineSurface.cpp',
 ]
 
+with open(Path(__file__).parent / 'README.rst') as f:
+    desc = f.read()
+
 
 setup(
     name='LRSplines',
-    version='0.1',
+    version='1.0',
     description='Python bindings for the LRSplines library',
+    long_description_content_type='text/x-rst',
+    long_description=desc,
+    keywords=['Splines', 'LR', 'Locally refined'],
     maintainer='Eivind Fonn',
     maintainer_email='eivind.fonn@sintef.no',
+    license='GNU public license v3',
     packages=find_packages(),
     ext_modules=cythonize([
         Extension(
@@ -40,4 +48,11 @@ setup(
         )
     ]),
     install_requires=['numpy'],
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Topic :: Scientific/Engineering :: Mathematics',
+        'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Programming Language :: Python :: 3',
+    ],
 )

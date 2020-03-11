@@ -7,16 +7,24 @@ This is a cython-based Python wrapper around the `LRSplines
 of locally refined B-splines.
 
 
-Dependencies
-------------
-
-You will need a Python installation with numpy and cython, as well as LRSplines
-itself installed.
-
 Installing
 ----------
 
-Make sure the submodules are updated, i.e. ``git submodule init`` followed by
-``git submodule update``. To install, use::
+LRSplines is available on PyPi.::
 
-    pip install .
+    pip install lrsplines
+
+
+Usage
+-----
+
+There are two modules for interacting with LRSplines.
+
+- The ``lrspline.raw`` module contains an API that is identical (so
+  far as feasible) to the C++ interface of the backend library.
+
+- The ``lrspline`` module contains a Pythonic interface to the same
+  library.
+
+In addition, the ``lrsplines`` module is available, but is deprecated
+and should not be used.
