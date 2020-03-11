@@ -211,6 +211,14 @@ class LRSplineObject:
     def generate_ids(self):
         self.w.generateIDs()
 
+    def __mul__(self, x):
+        new = self.clone()
+        new.controlpoints *= x
+        return new
+
+    def __rmul__(self, x):
+        return self * x
+
 
 class LRSplineSurface(LRSplineObject):
 
