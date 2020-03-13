@@ -3,7 +3,7 @@ import numpy as np
 from . import raw
 
 
-def check_direction(direction, pardim):
+def _check_direction(direction, pardim):
     if direction in {0, 'u', 'U'} and 0 < pardim:
         return 0
     elif direction in {1, 'v', 'V'} and 1 < pardim:
@@ -11,6 +11,20 @@ def check_direction(direction, pardim):
     elif direction in {2, 'w', 'W'} and 2 < pardim:
         return 2
     raise ValueError('Invalid direction')
+
+
+def _check_edge(edge):
+    side = raw.parameterEdge.NONE
+    for arg in edge:
+        side |= {
+            'west': raw.parameterEdge.WEST,
+            'east': raw.parameterEdge.EAST,
+            'south': raw.parameterEdge.SOUTH,
+            'north': raw.parameterEdge.NORTH,
+            'top': raw.parameterEdge.TOP,
+            'bottom': raw.parameterEdge.BOTTOM,
+        }[arg]
+    return side
 
 
 class SimpleWrapper:
@@ -69,17 +83,17 @@ class Element(SimpleWrapper):
     def start(self, direction=None):
         if direction is None:
             return tuple(self.w.getParmin(d) for d in range(self.pardim))
-        return self.w.getParmin(check_direction(direction, self.pardim))
+        return self.w.getParmin(_check_direction(direction, self.pardim))
 
     def end(self, direction=None):
         if direction is None:
             return tuple(self.w.getParmax(d) for d in range(self.pardim))
-        return self.w.getParmax(check_direction(direction, self.pardim))
+        return self.w.getParmax(_check_direction(direction, self.pardim))
 
     def span(self, direction=None):
         if direction is None:
             return tuple((self.w.getParmin(d), self.w.getParmax(d)) for d in range(self.pardim))
-        direction = check_direction(direction, self.pardim)
+        direction = _check_direction(direction, self.pardim)
         return (self.w.getParmin(direction), self.w.getParmax(direction))
 
     def support(self):
@@ -131,7 +145,7 @@ class MeshLine(MeshInterface):
             var = (self.w.start_, self.w.stop_)
             const = (self.w.const_par_, self.w.const_par_)
             return (var, const) if self.w.is_spanning_u() else (const, var)
-        direction = check_direction(direction, self.lr.pardim)
+        direction = _check_direction(direction, self.lr.pardim)
         if direction == self.variable_direction:
             return (self.w.start_, self.w.stop_)
         return (self.w.const_par_, self.w.const_par_)
@@ -152,6 +166,10 @@ class ElementView:
         for w in self.lr.w.elementIter():
             yield Element(self.lr, w)
 
+    def edge(self, *edge):
+        for w in self.lr.w.getEdgeElementsIter(_check_edge(edge)):
+            yield Element(self.lr, w)
+
 
 class BasisView:
 
@@ -166,6 +184,10 @@ class BasisView:
 
     def __iter__(self):
         for w in self.lr.w.basisIter():
+            yield BasisFunction(self.lr, w)
+
+    def edge(self, *edge, depth=1):
+        for w in self.lr.w.getEdgeFunctionsIter(_check_edge(edge)):
             yield BasisFunction(self.lr, w)
 
 
@@ -232,38 +254,23 @@ class LRSplineObject:
     def start(self, direction=None):
         if direction is None:
             return tuple(self.w.startparam(d) for d in range(self.pardim))
-        return self.w.startparam(check_direction(direction, self.pardim))
+        return self.w.startparam(_check_direction(direction, self.pardim))
 
     def end(self, direction=None):
         if direction is None:
             return tuple(self.w.endparam(d) for d in range(self.pardim))
-        return self.w.endparam(check_direction(direction, self.pardim))
+        return self.w.endparam(_check_direction(direction, self.pardim))
 
     def span(self, direction=None):
         if direction is None:
             return tuple((self.w.startparam(d), self.w.endparam(d)) for d in range(self.pardim))
-        direction = check_direction(direction, self.pardim)
+        direction = _check_direction(direction, self.pardim)
         return (self.w.startparam(direction), self.w.endparam(direction))
 
     def order(self, direction=None):
         if direction is None:
             return tuple(self.w.order(d) for d in range(self.pardim))
-        return self.w.order(check_direction(direction, self.pardim))
-
-    def edge(self, *args):
-        side = raw.parameterEdge.NONE
-        for arg in args:
-            side |= {
-                'west': raw.parameterEdge.WEST,
-                'east': raw.parameterEdge.EAST,
-                'south': raw.parameterEdge.SOUTH,
-                'north': raw.parameterEdge.NORTH,
-                'top': raw.parameterEdge.TOP,
-                'bottom': raw.parameterEdge.BOTTOM,
-            }[arg]
-
-        for w in self.w.getEdgeFunctionsIter(side):
-            yield BasisFunction(self, w)
+        return self.w.order(_check_direction(direction, self.pardim))
 
     def generate_ids(self):
         self.w.generateIDs()
@@ -320,7 +327,7 @@ class LRSplineSurface(LRSplineObject):
 
         if multiplicity is None:
             multiplicity = 1
-        direction = check_direction(direction, self.pardim)
+        direction = _check_direction(direction, self.pardim)
 
         if direction == 0:
             self.w.insert_const_u_edge(value, start, end, multiplicity)
