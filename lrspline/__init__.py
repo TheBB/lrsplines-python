@@ -68,6 +68,10 @@ class BasisFunction(SimpleWrapper):
 
     __call__ = evaluate
 
+    def refine(self):
+        self.lr.w.refineBasisFunction(self.id)
+        self.lr.w.generateIDs()
+
 
 class Element(SimpleWrapper):
 
@@ -101,6 +105,10 @@ class Element(SimpleWrapper):
     def support(self):
         for w in self.w.supportIter():
             yield BasisFunction(self.lr, w)
+
+    def refine(self):
+        self.lr.w.refineElement(self.id)
+        self.lr.w.generateIDs()
 
 
 class MeshInterface(SimpleWrapper):
@@ -265,6 +273,21 @@ class LRSplineObject:
         if direction is None:
             return tuple(self.w.order(d) for d in range(self.pardim))
         return self.w.order(_check_direction(direction, self.pardim))
+
+    def refine(self, objects, beta=None):
+        if not objects:
+            raise ValueError('Refinement list must be non-empty')
+        elif isinstance(objects[0], float):
+            self.w.refineByDimensionIncrease(objects, beta)
+        elif isinstance(objects[0], BasisFunction):
+            ids = [bf.id for bf in objects]
+            self.w.refineBasisFunction(ids)
+        elif isinstance(objects[0], Element):
+            ids = [bf.id for bf in objects]
+            self.w.refineElement(ids)
+        else:
+            raise TypeError('List of unknown objects: expected float, BasisFunction or Element')
+        self.w.generateIDs()
 
     def generate_ids(self):
         self.w.generateIDs()
