@@ -1,3 +1,5 @@
+from functools import partial
+import operator as op
 import numpy as np
 
 from . import raw
@@ -151,60 +153,52 @@ class MeshLine(MeshInterface):
         return (self.w.const_par_, self.w.const_par_)
 
 
-class ElementView:
+class ListLikeView:
 
-    def __init__(self, lr):
-        self.lr = lr
+    def __init__(self, obj, lenf, itemf, iterf, wrapf):
+        self.obj = obj
+        self.lenf = op.methodcaller(lenf)
+        self.itemf = op.methodcaller(itemf)
+        self.iterf = op.methodcaller(iterf)
+        self.wrapf = wrapf
 
     def __len__(self):
-        return self.lr.w.nElements()
+        return self.lenf(self.obj)
 
     def __getitem__(self, idx):
-        return self.lr.w.getElement(idx)
+        return self.wrapf(self.itemf(self.obj, idx))
 
     def __iter__(self):
-        for w in self.lr.w.elementIter():
-            yield Element(self.lr, w)
+        for w in self.iterf(self.obj):
+            yield self.wrapf(w)
+
+
+class ElementView(ListLikeView):
+
+    def __init__(self, lr):
+        super().__init__(lr.w, 'nElements', 'getElement', 'elementIter', partial(Element, lr))
+        self.lr = lr
 
     def edge(self, *edge):
         for w in self.lr.w.getEdgeElementsIter(_check_edge(edge)):
             yield Element(self.lr, w)
 
 
-class BasisView:
+class BasisView(ListLikeView):
 
     def __init__(self, lr):
+        super().__init__(lr.w, 'nBasisFunctions', 'getBasisfunction', 'basisIter', partial(BasisFunction, lr))
         self.lr = lr
-
-    def __len__(self):
-        return self.lr.w.nBasisFunctions()
-
-    def __getitem__(self, idx):
-        return self.lr.w.getBasisfunction(idx)
-
-    def __iter__(self):
-        for w in self.lr.w.basisIter():
-            yield BasisFunction(self.lr, w)
 
     def edge(self, *edge, depth=1):
         for w in self.lr.w.getEdgeFunctionsIter(_check_edge(edge)):
             yield BasisFunction(self.lr, w)
 
 
-class MeshLineView:
+class MeshLineView(ListLikeView):
 
     def __init__(self, lr):
-        self.lr = lr
-
-    def __len__(self):
-        return self.lr.w.nMeshlines()
-
-    def __getitem__(self, idx):
-        return self.lr.w.getMeshline(idx)
-
-    def __iter__(self):
-        for w in self.lr.w.meshlineIter():
-            yield Meshline(self.lr, w)
+        super().__init__(lr.w, 'nMeshlines', 'getMeshline', 'meshlineIter', partial(MeshLine, lr))
 
 
 class LRSplineObject:
