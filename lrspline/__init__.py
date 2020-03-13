@@ -158,7 +158,7 @@ class ListLikeView:
     def __init__(self, obj, lenf, itemf, iterf, wrapf):
         self.obj = obj
         self.lenf = op.methodcaller(lenf)
-        self.itemf = op.methodcaller(itemf)
+        self.itemf = itemf
         self.iterf = op.methodcaller(iterf)
         self.wrapf = wrapf
 
@@ -166,7 +166,7 @@ class ListLikeView:
         return self.lenf(self.obj)
 
     def __getitem__(self, idx):
-        return self.wrapf(self.itemf(self.obj, idx))
+        return self.wrapf(getattr(self.obj, self.itemf)(idx))
 
     def __iter__(self):
         for w in self.iterf(self.obj):
