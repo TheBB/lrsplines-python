@@ -289,6 +289,21 @@ class LRSplineObject:
             raise TypeError('List of unknown objects: expected float, BasisFunction or Element')
         self.w.generateIDs()
 
+    def configure(self, **kwargs):
+        if 'aspect_ratio' in kwargs:
+            r = kwargs.pop('aspect_ratio')
+            posteriori = kwargs.pop('posteriori_fix', True)
+            self.w.setMaxAspectRatio(r, posteriori)
+        for key, val in kwargs.items():
+            attr = {
+                'strategy': 'setRefStrat',
+                'symmetry': 'setRefSymmetry',
+                'multiplicity': 'setRefMultiplicity',
+                'max_tjoints': 'setMaxTjoints',
+                'close_gaps': 'setCloseGaps',
+            }[key]
+            getattr(self.w, key)(val)
+
     def generate_ids(self):
         self.w.generateIDs()
 
