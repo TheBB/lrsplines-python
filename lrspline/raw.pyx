@@ -73,13 +73,14 @@ cdef extern from 'LRSpline/LRSpline.h' namespace 'LR':
         double endparam(int)
         int order(int)
         void generateIDs()
-        void getEdgeFunctions(vector[Basisfunction_*]& edgeFunctions, parameterEdge_ edge, int depth)
+        void getEdgeFunctions(vector[Basisfunction_*]& edgeFunctions, parameterEdge_ edge, int depth) const
+        void getEdgeElements(vector[Element_*]& edgeElements, parameterEdge_ edge) const
         vector[Element_*].iterator elementBegin()
         vector[Element_*].iterator elementEnd()
+        Element_* getElement(int i)
+        Basisfunction_* getBasisfunction(int i)
         HashSet_iterator[Basisfunction_*] basisBegin()
         HashSet_iterator[Basisfunction_*] basisEnd()
-        vector[Meshline_*].iterator meshlineBegin()
-        vector[Meshline_*].iterator meshlineEnd()
         bool setControlPoints(vector[double]& cps)
         void rebuildDimension(int dimvalue)
 
@@ -99,6 +100,10 @@ cdef extern from 'LRSpline/LRSplineSurface.h' namespace 'LR':
         void writePostscriptElements(ostream, int, int, bool, vector[int]*) const
         void writePostscriptMesh(ostream, bool, vector[int]*) const
         void writePostscriptMeshWithControlPoints(ostream, int, int) const
+        vector[Meshline_*].iterator meshlineBegin()
+        vector[Meshline_*].iterator meshlineEnd()
+        int nMeshlines() const
+        Meshline_* getMeshline(int i)
 
 
 cdef class Basisfunction:
@@ -208,7 +213,7 @@ cdef class LRSplineObject:
     def dimension(self):
         return self.w.dimension()
 
-    def rebuildDimension(self, dim):
+    def rebuildDimension(self, int dim):
         self.w.rebuildDimension(dim)
 
     def nBasisFunctions(self):
@@ -217,13 +222,13 @@ cdef class LRSplineObject:
     def nElements(self):
         return self.w.nElements()
 
-    def startparam(self, i):
+    def startparam(self, int i):
         return self.w.startparam(i)
 
-    def endparam(self, i):
+    def endparam(self, int i):
         return self.w.endparam(i)
 
-    def order(self, i):
+    def order(self, int i):
         return self.w.order(i)
 
     def elementIter(self):
@@ -235,6 +240,11 @@ cdef class LRSplineObject:
             yield el
             preinc(it)
 
+    def getElement(self, int i):
+        el = Element()
+        el.w = self.w.getElement(i)
+        return el
+
     def basisIter(self):
         cdef HashSet_iterator[Basisfunction_*] it = self.w.basisBegin()
         cdef HashSet_iterator[Basisfunction_*] end = self.w.basisEnd()
@@ -243,6 +253,11 @@ cdef class LRSplineObject:
             bf.w = deref(it)
             yield bf
             preinc(it)
+
+    def getBasisfunction(self, int i):
+        bf = Basisfunction()
+        bf.w = self.w.getBasisfunction(i)
+        return bf
 
     def getEdgeFunctionsIter(self, edge):
         cdef vector[Basisfunction_*] bfs
@@ -343,6 +358,14 @@ cdef class LRSurface(LRSplineObject):
             ml.w = deref(it)
             yield ml
             preinc(it)
+
+    def nMeshlines(self):
+        return (<LRSplineSurface_*> self.w).nMeshlines()
+
+    def getMeshline(self, int i):
+        ml = Meshline()
+        ml.w = (<LRSplineSurface_*> self.w).getMeshline(i)
+        return ml
 
     def insert_const_u_edge(self, double u, double start_v, double stop_v, int multiplicity=1):
         (<LRSplineSurface_*> self.w).insert_const_u_edge(u, start_v, stop_v, multiplicity)
