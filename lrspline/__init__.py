@@ -137,13 +137,63 @@ class MeshLine(MeshInterface):
         return (self.w.const_par_, self.w.const_par_)
 
 
+class ElementView:
+
+    def __init__(self, lr):
+        self.lr = lr
+
+    def __len__(self):
+        return self.lr.w.nElements()
+
+    def __getitem__(self, idx):
+        return self.lr.w.getElement(idx)
+
+    def __iter__(self):
+        for w in self.lr.w.elementIter():
+            yield Element(self.lr, w)
+
+
+class BasisView:
+
+    def __init__(self, lr):
+        self.lr = lr
+
+    def __len__(self):
+        return self.lr.w.nBasisFunctions()
+
+    def __getitem__(self, idx):
+        return self.lr.w.getBasisfunction(idx)
+
+    def __iter__(self):
+        for w in self.lr.w.basisIter():
+            yield BasisFunction(self.lr, w)
+
+
+class MeshLineView:
+
+    def __init__(self, lr):
+        self.lr = lr
+
+    def __len__(self):
+        return self.lr.w.nMeshlines()
+
+    def __getitem__(self, idx):
+        return self.lr.w.getMeshline(idx)
+
+    def __iter__(self):
+        for w in self.lr.w.meshlineIter():
+            yield Meshline(self.lr, w)
+
+
 class LRSplineObject:
 
     def __init__(self, w):
         self.w = w
+        self.elements = ElementView(self)
+        self.basis = BasisView(self)
 
     def __len__(self):
-        return self.w.nBasisFunctions()
+        return len(self.basis)
 
     @property
     def pardim(self):
@@ -200,10 +250,6 @@ class LRSplineObject:
             return tuple(self.w.order(d) for d in range(self.pardim))
         return self.w.order(check_direction(direction, self.pardim))
 
-    def basis(self):
-        for w in self.w.basisIter():
-            yield BasisFunction(self, w)
-
     def edge(self, *args):
         side = raw.parameterEdge.NONE
         for arg in args:
@@ -218,14 +264,6 @@ class LRSplineObject:
 
         for w in self.w.getEdgeFunctionsIter(side):
             yield BasisFunction(self, w)
-
-    @property
-    def nelements(self):
-        return self.w.nElements()
-
-    def elements(self):
-        for w in self.w.elementIter():
-            yield Element(self, w)
 
     def generate_ids(self):
         self.w.generateIDs()
@@ -249,6 +287,7 @@ class LRSplineSurface(LRSplineObject):
             if arg is not None:
                 w.read(arg)
         super().__init__(w)
+        self.meshlines = MeshLineView(self)
 
     def clone(self):
         return LRSplineSurface(self.w.copy())
