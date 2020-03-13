@@ -245,6 +245,16 @@ cdef class LRSplineObject:
         el.w = self.w.getElement(i)
         return el
 
+    def getEdgeElementsIter(self, edge):
+        cdef vector[Element_*] els
+        self.w.getEdgeElements(els, edge)
+        it = els.begin()
+        while it != els.end():
+            bf = Element()
+            bf.w = deref(it)
+            yield bf
+            preinc(it)
+
     def basisIter(self):
         cdef HashSet_iterator[Basisfunction_*] it = self.w.basisBegin()
         cdef HashSet_iterator[Basisfunction_*] end = self.w.basisEnd()
@@ -259,9 +269,9 @@ cdef class LRSplineObject:
         bf.w = self.w.getBasisfunction(i)
         return bf
 
-    def getEdgeFunctionsIter(self, edge):
+    def getEdgeFunctionsIter(self, edge, int depth=1):
         cdef vector[Basisfunction_*] bfs
-        self.w.getEdgeFunctions(bfs, edge, 1)
+        self.w.getEdgeFunctions(bfs, edge, depth)
         it = bfs.begin()
         while it != bfs.end():
             bf = Basisfunction()
