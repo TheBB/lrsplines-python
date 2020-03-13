@@ -94,6 +94,12 @@ cdef extern from 'LRSpline/LRSpline.h' namespace 'LR':
         void refineElement(int i)
         void refineElement(const vector[int]& i)
         void refineByDimensionIncrease(const vector[double]& error, double beta)
+        void setRefStrat(refinementStrategy_ strat)
+        void setRefSymmetry(int symmetry)
+        void setRefMultiplicity(int mult)
+        void setMaxTjoints(int n)
+        void setCloseGaps(bool doClose)
+        void setMaxAspectRatio(double r, bool aposterioriFix)
 
 cdef extern from 'LRSpline/LRSplineSurface.h' namespace 'LR':
     cdef cppclass LRSplineSurface_ 'LR::LRSplineSurface' (LRSpline_):
@@ -322,6 +328,24 @@ cdef class LRSplineObject:
         cdef vector[double] cpperrors
         cpperrors = errors
         self.w.refineByDimensionIncrease(errors, beta)
+
+    def setRefStrat(self, strat):
+        self.w.setRefStrat(strat)
+
+    def setRefSymmetry(self, int symmetry):
+        self.w.setRefSymmetry(symmetry)
+
+    def setRefMultiplicity(self, int mult):
+        self.w.setRefMultiplicity(mult)
+
+    def setMaxTjoints(self, int n):
+        self.w.setMaxTjoints(n)
+
+    def setCloseGaps(self, bool close):
+        self.w.setCloseGaps(close)
+
+    def setMaxAspectRatio(self, double r, bool aposteriori=True):
+        self.w.setMaxAspectRatio(r, aposteriori)
 
 
 cdef class LRSurface(LRSplineObject):
