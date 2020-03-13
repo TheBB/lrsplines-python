@@ -55,6 +55,12 @@ cdef extern from 'LRSpline/Meshline.h' namespace 'LR':
         double stop_
         int multiplicity_
 
+cdef extern from 'LRSpline/LRSpline.h':
+    cdef enum refinementStrategy_ 'refinementStrategy':
+        LR_MINSPAN
+        LR_FULLSPAN
+        LR_STRUCTURED_MESH
+
 cdef extern from 'LRSpline/LRSpline.h' namespace 'LR':
     cdef enum parameterEdge_ 'LR::parameterEdge':
         NONE
@@ -83,6 +89,7 @@ cdef extern from 'LRSpline/LRSpline.h' namespace 'LR':
         HashSet_iterator[Basisfunction_*] basisEnd()
         bool setControlPoints(vector[double]& cps)
         void rebuildDimension(int dimvalue)
+
 
 cdef extern from 'LRSpline/LRSplineSurface.h' namespace 'LR':
     cdef cppclass LRSplineSurface_ 'LR::LRSplineSurface' (LRSpline_):
@@ -198,6 +205,12 @@ cdef class parameterEdge:
     NORTH  = parameterEdge_.NORTH
     TOP    = parameterEdge_.TOP
     BOTTOM = parameterEdge_.BOTTOM
+
+
+cdef class refinementStrategy:
+    LR_MINSPAN = refinementStrategy_.LR_MINSPAN
+    LR_FULLSPAN = refinementStrategy_.LR_FULLSPAN
+    LR_STRUCTURED_MESH = refinementStrategy_.LR_STRUCTURED_MESH
 
 
 cdef class LRSplineObject:
