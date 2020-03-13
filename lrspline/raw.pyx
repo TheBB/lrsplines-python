@@ -89,7 +89,11 @@ cdef extern from 'LRSpline/LRSpline.h' namespace 'LR':
         HashSet_iterator[Basisfunction_*] basisEnd()
         bool setControlPoints(vector[double]& cps)
         void rebuildDimension(int dimvalue)
-
+        void refineBasisFunction(int i)
+        void refineBasisFunction(const vector[int]& i)
+        void refineElement(int i)
+        void refineElement(const vector[int]& i)
+        void refineByDimensionIncrease(const vector[double]& error, double beta)
 
 cdef extern from 'LRSpline/LRSplineSurface.h' namespace 'LR':
     cdef cppclass LRSplineSurface_ 'LR::LRSplineSurface' (LRSpline_):
@@ -297,6 +301,27 @@ cdef class LRSplineObject:
 
     def generateIDs(self):
         self.w.generateIDs()
+
+    def refineBasisFunction(self, i):
+        cdef vector[int] indices
+        if isinstance(i, int):
+            self.w.refineBasisFunction(<int> i)
+        elif isinstance(i, list):
+            indices = i
+            self.w.refineBasisFunction(indices)
+
+    def refineElement(self, i):
+        cdef vector[int] indices
+        if isinstance(i, int):
+            self.w.refineElement(<int> i)
+        elif isinstance(i, list):
+            indices = i
+            self.w.refineElement(indices)
+
+    def refineByDimensionIncrease(self, errors, double beta):
+        cdef vector[double] cpperrors
+        cpperrors = errors
+        self.w.refineByDimensionIncrease(errors, beta)
 
 
 cdef class LRSurface(LRSplineObject):
