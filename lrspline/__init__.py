@@ -221,11 +221,11 @@ class LRSplineObject:
 
     @property
     def pardim(self):
-        return next(self.elements()).pardim
+        return next(iter(self.elements)).pardim
 
     @property
     def dimension(self):
-        return len(next(self.basis()).controlpoint)
+        return len(next(iter(self.basis)).controlpoint)
 
     @dimension.setter
     def dimension(self, value):
@@ -237,7 +237,7 @@ class LRSplineObject:
 
     @property
     def controlpoints(self):
-        return np.array([bf.controlpoint for bf in self.basis()])
+        return np.array([bf.controlpoint for bf in self.basis])
 
     @controlpoints.setter
     def controlpoints(self, value):
