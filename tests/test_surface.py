@@ -1,16 +1,33 @@
+from pytest import fixture
 from pathlib import Path
 import lrspline as lr
 
 
 path = Path(__file__).parent
 
-
-def test_read():
+@fixture
+def srf():
     with open(path / 'mesh01.lr', 'rb') as f:
-        surf = lr.LRSplineSurface(f)
+        return lr.LRSplineSurface(f)
 
-    assert len(surf.basis) == 1229
-    assert len(list(surf.basis.edge('south'))) == 15
-    assert len(surf.elements) == 1300
-    assert len(list(surf.elements.edge('south'))) == 14
-    assert len(surf.meshlines) == 130
+
+@fixture
+def vol():
+    with open(path / 'mesh02.lr', 'rb') as f:
+        return lr.LRSplineVolume(f)
+
+
+def test_srf_numbers(srf):
+    assert len(srf.basis) == 1229
+    assert len(list(srf.basis.edge('south'))) == 15
+    assert len(srf.elements) == 1300
+    assert len(list(srf.elements.edge('south'))) == 14
+    assert len(srf.meshlines) == 130
+
+
+def test_vol_numbers(vol):
+    assert len(vol.basis) == 1176
+    assert len(list(vol.basis.edge('south'))) == 90
+    assert len(vol.elements) == 1240
+    assert len(list(vol.elements.edge('south'))) == 70
+    assert len(vol.meshrects) == 189
