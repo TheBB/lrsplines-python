@@ -55,6 +55,14 @@ cdef extern from 'LRSpline/Meshline.h' namespace 'LR':
         double stop_
         int multiplicity_
 
+cdef extern from 'LRSpline/MeshRectangle.h' namespace 'LR':
+    cdef cppclass MeshRectangle_ 'LR::MeshRectangle':
+        int constDirection()
+        double constParameter()
+        vector[double] start_
+        vector[double] stop_
+        int multiplicity_
+
 cdef extern from 'LRSpline/LRSpline.h':
     cdef enum refinementStrategy_ 'refinementStrategy':
         LR_MINSPAN
@@ -111,6 +119,7 @@ cdef extern from 'LRSpline/LRSplineSurface.h' namespace 'LR':
         void point(vector[double]& pt, double u, double v, int iEl, bool u_from_right, bool v_from_right) const
         void point(vector[vector[double]]& pts, double u, double v, int derivs, int iEl) const
         void point(vector[vector[double]]& pts, double u, double v, int derivs, bool u_from_right, bool v_from_right, int iEl) const
+        void getGlobalKnotVector(vector[double]& knot_u, vector[double]& knot_v) const
         void getGlobalUniqueKnotVector(vector[double]& knot_u, vector[double]& knot_v) const
         Meshline_* insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity)
         Meshline_* insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity)
@@ -121,6 +130,24 @@ cdef extern from 'LRSpline/LRSplineSurface.h' namespace 'LR':
         vector[Meshline_*].iterator meshlineEnd()
         int nMeshlines() const
         Meshline_* getMeshline(int i)
+
+cdef extern from 'LRSpline/LRSplineVolume.h' namespace 'LR':
+    cdef cppclass LRSplineVolume_ 'LR::LRSplineVolume' (LRSpline_):
+        LRSplineVolume() except +
+        LRSplineVolume_* copy()
+        void read(istream) except +
+        void write(ostream) except +
+        void point(vector[double]& pt, double u, double v, double w, int iEl) const
+        void point(vector[double]& pt, double u, double v, double w, int iEl, bool u_from_right, bool v_from_right, bool w_from_right) const
+        void point(vector[vector[double]]& pts, double u, double v, double w, int derivs, int iEl) const
+        void point(vector[vector[double]]& pts, double u, double v, double w, int derivs, bool u_from_right, bool v_from_right, bool w_from_right, int iEl) const
+        void getGlobalKnotVector(vector[double]& knot_u, vector[double]& knot_v, vector[double]& knot_w) const
+        void getGlobalUniqueKnotVector(vector[double]& knot_u, vector[double]& knot_v, vector[double]& knot_w) const
+        vector[MeshRectangle_*].iterator meshrectBegin()
+        vector[MeshRectangle_*].iterator meshrectEnd()
+        int nMeshRectangles() const
+        MeshRectangle_* getMeshRectangle(int i)
+        MeshRectangle_* insert_line(MeshRectangle_* newRect)
 
 
 cdef class Basisfunction:
@@ -205,6 +232,29 @@ cdef class Meshline:
     @property
     def multiplicity_(self):
         return self.w.multiplicity_
+
+
+cdef class MeshRectangle:
+
+    cdef MeshRectangle_* w
+
+    def constDirection(self):
+        return self.w.constDirection()
+
+    def constParameter(self):
+        return self.w.constParameter()
+
+    @property
+    def start_(self):
+        return np.array(self.w.start_)
+
+    @property
+    def stop_(self):
+        return np.array(self.w.stop_)
+
+    @property
+    def multiplicity_(self):
+        return self.multiplicity_
 
 
 cdef class parameterEdge:
@@ -395,6 +445,12 @@ cdef class LRSurface(LRSplineObject):
         retval._set_w(copy)
         return retval
 
+    def getGlobalKnotVector(self):
+        cdef vector[double] knots_u
+        cdef vector[double] knots_v
+        (<LRSplineSurface_*> self.w).getGlobalKnotVector(knots_u, knots_v)
+        return np.array(knots_u), np.array(knots_v)
+
     def getGlobalUniqueKnotVector(self):
         cdef vector[double] knots_u
         cdef vector[double] knots_v
@@ -406,19 +462,19 @@ cdef class LRSurface(LRSplineObject):
         cdef vector[vector[double]] results
         if len(args) == 2:
             u, v = args
-            (<LRSplineSurface_*> self.w).point(point, u, v, iEl)
+            (<LRSplineSurface_*> self.w).point(point, u, v, <int> iEl)
             return np.array(point)
         if len(args) == 4:
             u, v, ufr, vfr = args
-            (<LRSplineSurface_*> self.w).point(point, u, v, <bool> ufr, <bool> vfr, iEl)
+            (<LRSplineSurface_*> self.w).point(point, u, v, <int> iEl, <bool> ufr, <bool> vfr)
             return np.array(point)
         if len(args) == 3:
             u, v, d = args
-            (<LRSplineSurface_*> self.w).point(results, u, v, d, iEl)
+            (<LRSplineSurface_*> self.w).point(results, u, v, d, <int> iEl)
             return np.array(results)
         if len(args) == 5:
             u, v, d, ufr, vfr = args
-            (<LRSplineSurface_*> self.w).point(results, u, v, d, iEl)
+            (<LRSplineSurface_*> self.w).point(results, u, v, d, <bool> ufr, <bool> vfr, <int> iEl)
             return np.array(results)
         raise TypeError("point() expected 2, 3, 4 or 5 arguments")
 
@@ -444,3 +500,94 @@ cdef class LRSurface(LRSplineObject):
 
     def insert_const_v_edge(self, double v, double start_u, double stop_u, int multiplicity=1):
         (<LRSplineSurface_*> self.w).insert_const_v_edge(v, start_u, stop_u, multiplicity)
+
+
+cdef class LRVolume(LRSplineObject):
+
+    def __cinit__(self, w=None):
+        self.w = new LRSplineVolume_()
+
+    cdef _set_w(self, LRSplineVolume_* w):
+        del self.w
+        self.w = w
+
+    def read(self, stream):
+        cdef string cppstring
+        if hasattr(stream, 'read'):
+            stream = stream.read()
+        if isinstance(stream, str):
+            cppstring = stream.encode()
+        elif isinstance(stream, bytes):
+            cppstring = stream
+        cdef istringstream* cppstream
+        cppstream = new istringstream(cppstring)
+        (<LRSplineVolume_*> self.w).read(deref(cppstream))
+        del stream
+
+    def write(self, stream):
+        cdef ostringstream* cppstream
+        cppstream = new ostringstream()
+        (<LRSplineVolume_*> self.w).write(deref(cppstream))
+        stream.write(cppstream.str())
+        del cppstream
+
+    def copy(self):
+        cdef LRSplineVolume_* copy = (<LRSplineVolume_*> self.w).copy()
+        retval = LRVolume()
+        retval._set_w(copy)
+        return retval
+
+    def getGlobalKnotVector(self):
+        cdef vector[double] knots_u
+        cdef vector[double] knots_v
+        cdef vector[double] knots_w
+        (<LRSplineVolume_*> self.w).getGlobalKnotVector(knots_u, knots_v, knots_w)
+        return np.array(knots_u), np.array(knots_v), np.array(knots_w)
+
+    def getGlobalUniqueKnotVector(self):
+        cdef vector[double] knots_u
+        cdef vector[double] knots_v
+        cdef vector[double] knots_w
+        (<LRSplineVolume_*> self.w).getGlobalUniqueKnotVector(knots_u, knots_v, knots_w)
+        return np.array(knots_u), np.array(knots_v), np.array(knots_w)
+
+    def point(self, *args, iEl=-1):
+        cdef vector[double] point
+        cdef vector[vector[double]] results
+        if len(args) == 3:
+            u, v, w = args
+            (<LRSplineVolume_*> self.w).point(point, u, v, w, <int> iEl)
+            return np.array(point)
+        if len(args) == 6:
+            u, v, w, ufr, vfr, wfr = args
+            (<LRSplineVolume_*> self.w).point(point, u, v, w, <int> iEl, <bool> ufr, <bool> vfr, <bool> wfr)
+            return np.array(point)
+        if len(args) == 4:
+            u, v, w, d = args
+            (<LRSplineVolume_*> self.w).point(results, u, v, w, d, <int> iEl)
+            return np.array(results)
+        if len(args) == 7:
+            u, v, w, d, ufr, vfr, wfr = args
+            (<LRSplineVolume_*> self.w).point(results, u, v, w, d, <bool> ufr, <bool> vfr, <bool> wfr, <int> iEl)
+            return np.array(results)
+        raise TypeError("point() expected 2, 3, 4 or 5 arguments")
+
+    def meshrectIter(self):
+        cdef vector[MeshRectangle_*].iterator it = (<LRSplineVolume_*> self.w).meshrectBegin()
+        cdef vector[MeshRectangle_*].iterator end = (<LRSplineVolume_*> self.w).meshrectEnd()
+        while it != end:
+            mr = MeshRectangle()
+            mr.w = deref(it)
+            yield mr
+            preinc(it)
+
+    def nMeshRectangles(self):
+        return (<LRSplineVolume_*> self.w).nMeshRectangles()
+
+    def getMeshRectangle(self, i):
+        mr = MeshRectangle()
+        mr.w = (<LRSplineVolume_*> self.w).getMeshRectangle(i)
+        return mr
+
+    def insert_line(self, mr: MeshRectangle):
+        (<LRSplineVolume_*> self.w).insert_line(mr.w)

@@ -113,6 +113,15 @@ class Element(SimpleWrapper):
 
 class MeshInterface(SimpleWrapper):
 
+    def __str__(self):
+        cls = self.__class__.__name__
+        const = '{} = {}'.format('uvw'[self.constant_direction], self.value)
+        variables = [
+            '{} < {} < {}'.format(self.start(i), 'uvw'[i], self.end(i))
+            for i in self.variable_directions
+        ]
+        return cls + '(' + const + '; ' + ', '.join(variables) + ')'
+
     def start(self, direction=None):
         if direction is None:
             return tuple(k[0] for k in self.span())
@@ -125,10 +134,6 @@ class MeshInterface(SimpleWrapper):
 
 
 class MeshLine(MeshInterface):
-
-    def __str__(self):
-        parname = 'u' if self.w.is_spanning_u() else 'v'
-        return f'MeshLine({self.w.start_} < {parname} < {self.w.stop_})'
 
     @property
     def variable_direction(self):
@@ -159,6 +164,37 @@ class MeshLine(MeshInterface):
         if direction == self.variable_direction:
             return (self.w.start_, self.w.stop_)
         return (self.w.const_par_, self.w.const_par_)
+
+
+class MeshRect(MeshInterface):
+
+    @property
+    def variable_directions(self):
+        return {
+            0: (1, 2),
+            1: (0, 2),
+            2: (0, 1),
+        }[self.w.constCirection()]
+
+    @property
+    def constant_direction(self):
+        return self.w.constDirection()
+
+    @property
+    def value(self):
+        return self.w.constParameter()
+
+    @property
+    def multiplicity(self):
+        return self.w.multiplicity_
+
+    def span(self, direction=None):
+        start, end = self.w.start_, self.w.end_
+        if direction is None:
+            return tuple(zip(start, end))
+        direction = _check_direction(direction, self.lr.pardim)
+        return start[direction], end[direction]
+
 
 
 class ListLikeView:
@@ -207,6 +243,12 @@ class MeshLineView(ListLikeView):
 
     def __init__(self, lr):
         super().__init__(lr.w, 'nMeshlines', 'getMeshline', 'meshlineIter', partial(MeshLine, lr))
+
+
+class MeshRectView(ListLikeView):
+
+    def __init__(self, lr):
+        super().__init__(lr.w, 'nMeshRectangles', 'getMeshRectangle', 'meshrectIter', partial(MeshRect, lr))
 
 
 class LRSplineObject:
@@ -334,10 +376,6 @@ class LRSplineSurface(LRSplineObject):
     def write_postscript(self, stream, **kwargs):
         return self.w.writePostscriptElements(stream, **kwargs)
 
-    def meshlines(self):
-        for w in self.w.meshlineIter():
-            yield MeshLine(self, w)
-
     def insert(self, *args, direction=None, value=None, start=None, end=None, multiplicity=None):
         if len(args) > 1:
             raise TypeError('Expected at most one positional argument')
@@ -376,6 +414,42 @@ class LRSplineSurface(LRSplineObject):
         retval = []
         for up, vp in zip(u.flat, v.flat):
             r = self.w.point(up, vp, nderivs, iEl=iel)
+            retval.append(r[index])
+        return np.array(retval).reshape(u.shape)
+
+    __call__ = evaluate
+
+
+class LRSplineVolume(LRSplineObject):
+
+    def __init__(self, arg=None):
+        if isinstance(arg, raw.LRVolume):
+            w = arg
+        else:
+            w = raw.LRVolume()
+            if arg is not None:
+                w.read(arg)
+        super().__init__(w)
+        self.meshrects = MeshRectView(self)
+
+    def clone(self):
+        return LRSplineVolume(self.w.copy())
+
+    def insert(self, mr):
+        self.w.insert(mr)
+
+    def evaluate(self, u, v, w, iel=-1):
+        retval = np.array([self.w.point(up, vp, wp, iEl=iel) for up, vp in zip(u.flat, v.flat, w.flat)])
+        return retval.reshape(u.shape)
+
+    def derivative(self, u, v, w, d=(1,1,1), iel=-1):
+        nderivs = sum(d)
+        index = nderivs * (nderivs + 1) * (nderivs + 2) // 6
+        tgt = tuple(chain.from_iterable(repeat(i,r) for i,r in enumerate(d)))
+        index += next(i for i,t in enumerate(combinations_with_replacement(range(len(d)), nderivs)) if t == tgt)
+        retval = []
+        for up, vp in zip(u.flat, v.flat, w.flat):
+            r = self.w.point(up, vp, wp, nderivs, iEl=iel)
             retval.append(r[index])
         return np.array(retval).reshape(u.shape)
 

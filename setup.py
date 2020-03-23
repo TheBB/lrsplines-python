@@ -14,8 +14,10 @@ SOURCES = [
     'submodules/LRSplines/src/Basisfunction.cpp',
     'submodules/LRSplines/src/Element.cpp',
     'submodules/LRSplines/src/Meshline.cpp',
+    'submodules/LRSplines/src/MeshRectangle.cpp',
     'submodules/LRSplines/src/LRSpline.cpp',
     'submodules/LRSplines/src/LRSplineSurface.cpp',
+    'submodules/LRSplines/src/LRSplineVolume.cpp',
 ]
 
 with open(Path(__file__).parent / 'README.rst') as f:
