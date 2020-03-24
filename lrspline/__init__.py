@@ -1,6 +1,7 @@
 from functools import partial
 import operator as op
 import numpy as np
+from itertools import combinations_with_replacement, repeat, chain
 
 from . import raw
 
@@ -439,7 +440,7 @@ class LRSplineVolume(LRSplineObject):
         self.w.insert(mr)
 
     def evaluate(self, u, v, w, iel=-1):
-        retval = np.array([self.w.point(up, vp, wp, iEl=iel) for up, vp in zip(u.flat, v.flat, w.flat)])
+        retval = np.array([self.w.point(up, vp, wp, iEl=iel) for up, vp, wp in zip(u.flat, v.flat, w.flat)])
         return retval.reshape(u.shape)
 
     def derivative(self, u, v, w, d=(1,1,1), iel=-1):
@@ -448,7 +449,7 @@ class LRSplineVolume(LRSplineObject):
         tgt = tuple(chain.from_iterable(repeat(i,r) for i,r in enumerate(d)))
         index += next(i for i,t in enumerate(combinations_with_replacement(range(len(d)), nderivs)) if t == tgt)
         retval = []
-        for up, vp in zip(u.flat, v.flat, w.flat):
+        for up, vp, wp in zip(u.flat, v.flat, w.flat):
             r = self.w.point(up, vp, wp, nderivs, iEl=iel)
             retval.append(r[index])
         return np.array(retval).reshape(u.shape)
