@@ -255,6 +255,7 @@ class MeshRectView(ListLikeView):
 class LRSplineObject:
 
     def __init__(self, w):
+        w.generateIDs()
         self.w = w
         self.elements = ElementView(self)
         self.basis = BasisView(self)

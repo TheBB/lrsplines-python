@@ -1,5 +1,6 @@
 from pytest import fixture
 from pathlib import Path
+import numpy as np
 import lrspline as lr
 
 
@@ -18,6 +19,7 @@ def vol():
 
 
 def test_srf_numbers(srf):
+    np.testing.assert_allclose(srf(0.0, 0.0), [0.0, 0.0])
     assert len(srf.basis) == 1229
     assert len(list(srf.basis.edge('south'))) == 15
     assert len(srf.elements) == 1300
@@ -26,6 +28,7 @@ def test_srf_numbers(srf):
 
 
 def test_vol_numbers(vol):
+    np.testing.assert_allclose(vol(0.0, 0.0, 0.0), [0.0, 0.0, 0.0])
     assert len(vol.basis) == 1176
     assert len(list(vol.basis.edge('south'))) == 90
     assert len(vol.elements) == 1240
