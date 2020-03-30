@@ -412,17 +412,21 @@ class LRSplineSurface(LRSplineObject):
             self.w.insert_const_v_edge(value, start, end, multiplicity)
 
     def evaluate(self, u, v, iel=-1):
-        retval = np.array([self.w.point(up, vp, iEl=iel) for up, vp in zip(u.flat, v.flat)])
-        return retval.reshape(u.shape)
+        if isinstance(u, np.ndarray) and isinstance(v, np.ndarray):
+            retval = np.array([self.w.point(up, vp, iEl=iel) for up, vp in zip(u.flat, v.flat)])
+            return retval.reshape(u.shape)
+        return self.w.point(u, v, iEl=iel)
 
     def derivative(self, u, v, d=(1,1), iel=-1):
         nderivs = sum(d)
         index = sum(dd + 1 for dd in range(nderivs)) + d[1]
-        retval = []
-        for up, vp in zip(u.flat, v.flat):
-            r = self.w.point(up, vp, nderivs, iEl=iel)
-            retval.append(r[index])
-        return np.array(retval).reshape(u.shape)
+        if isinstance(u, np.ndarray) and isinstance(v, np.ndarray):
+            retval = []
+            for up, vp in zip(u.flat, v.flat):
+                r = self.w.point(up, vp, nderivs, iEl=iel)
+                retval.append(r[index])
+            return np.array(retval).reshape(u.shape)
+        return self.w.point(u, v, nderivs, iEl=iel)[index]
 
     __call__ = evaluate
 
@@ -446,18 +450,22 @@ class LRSplineVolume(LRSplineObject):
         self.w.insert(mr)
 
     def evaluate(self, u, v, w, iel=-1):
-        retval = np.array([self.w.point(up, vp, wp, iEl=iel) for up, vp, wp in zip(u.flat, v.flat, w.flat)])
-        return retval.reshape(u.shape)
+        if isinstance(u, np.ndarray) and isinstance(u, np.ndarray) and isinstance(u, np.ndarray):
+            retval = np.array([self.w.point(up, vp, wp, iEl=iel) for up, vp, wp in zip(u.flat, v.flat, w.flat)])
+            return retval.reshape(u.shape)
+        return self.w.point(u, v, w, iEl=iel)
 
     def derivative(self, u, v, w, d=(1,1,1), iel=-1):
         nderivs = sum(d)
         index = nderivs * (nderivs + 1) * (nderivs + 2) // 6
         tgt = tuple(chain.from_iterable(repeat(i,r) for i,r in enumerate(d)))
         index += next(i for i,t in enumerate(combinations_with_replacement(range(len(d)), nderivs)) if t == tgt)
-        retval = []
-        for up, vp, wp in zip(u.flat, v.flat, w.flat):
-            r = self.w.point(up, vp, wp, nderivs, iEl=iel)
-            retval.append(r[index])
-        return np.array(retval).reshape(u.shape)
+        if isinstance(u, np.ndarray) and isinstance(u, np.ndarray) and isinstance(u, np.ndarray):
+            retval = []
+            for up, vp, wp in zip(u.flat, v.flat, w.flat):
+                r = self.w.point(up, vp, wp, nderivs, iEl=iel)
+                retval.append(r[index])
+            return np.array(retval).reshape(u.shape)
+        return self.w.point(u, v, w, nderivs, iEl=iel)[index]
 
     __call__ = evaluate
