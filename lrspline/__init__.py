@@ -317,6 +317,12 @@ class LRSplineObject:
             return tuple(self.w.order(d) for d in range(self.pardim))
         return self.w.order(_check_direction(direction, self.pardim))
 
+    def knots(self, direction=None):
+        if direction is None:
+            return self.w.getGlobalUniqueKnotVector()
+        direction = _check_direction(direction, self.pardim)
+        return self.w.getGlobalUniqueKnotVector()[direction]
+
     def refine(self, objects, beta=None):
         if not objects:
             raise ValueError('Refinement list must be non-empty')

@@ -501,6 +501,12 @@ cdef class LRSurface(LRSplineObject):
     def insert_const_v_edge(self, double v, double start_u, double stop_u, int multiplicity=1):
         (<LRSplineSurface_*> self.w).insert_const_v_edge(v, start_u, stop_u, multiplicity)
 
+    def getGlobalUniqueKnotVector(self):
+        cdef vector[double] ktsu
+        cdef vector[double] ktsv
+        (<LRSplineSurface_*> self.w).getGlobalUniqueKnotVector(ktsu, ktsv)
+        return (np.array(ktsu), np.array(ktsv))
+
 
 cdef class LRVolume(LRSplineObject):
 
@@ -591,3 +597,10 @@ cdef class LRVolume(LRSplineObject):
 
     def insert_line(self, mr: MeshRectangle):
         (<LRSplineVolume_*> self.w).insert_line(mr.w)
+
+    def getGlobalUniqueKnotVector(self):
+        cdef vector[double] ktsu
+        cdef vector[double] ktsv
+        cdef vector[double] ktsw
+        (<LRSplineVolume_*> self.w).getGlobalUniqueKnotVector(ktsu, ktsv, ktsw)
+        return (np.array(ktsu), np.array(ktsv), np.array(ktsw))
