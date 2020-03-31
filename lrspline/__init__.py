@@ -30,6 +30,19 @@ def _check_edge(edge):
     return side
 
 
+def _constructor(stream):
+    peek = stream.peek(20)
+    if not peek:
+        raise raw.EOFError('')
+    if isinstance(peek, bytes):
+        peek = peek.decode('utf-8')
+    if peek.startswith('# LRSPLINE SURFACE'):
+        return LRSplineSurface
+    if peek.startswith('# LRSPLINE VOLUME'):
+        return LRSplineVolume
+    raise ValueError("Unknown LRSpline object type: '{}'".format(peek[:20]))
+
+
 class SimpleWrapper:
 
     def __init__(self, lr, w):
@@ -259,6 +272,17 @@ class LRSplineObject:
         self.w = w
         self.elements = ElementView(self)
         self.basis = BasisView(self)
+
+    @staticmethod
+    def read_many(stream):
+        objects = []
+        while True:
+            try:
+                cls = _constructor(stream)
+                objects.append(cls(stream))
+            except raw.EOFError:
+                break
+        return objects
 
     def __len__(self):
         return len(self.basis)
