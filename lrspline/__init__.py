@@ -30,6 +30,19 @@ def _check_edge(edge):
     return side
 
 
+def _constructor(stream):
+    peek = stream.peek(20)
+    if not peek:
+        raise raw.EOFError('')
+    if isinstance(peek, bytes):
+        peek = peek.decode('utf-8')
+    if peek.startswith('# LRSPLINE SURFACE'):
+        return LRSplineSurface
+    if peek.startswith('# LRSPLINE VOLUME'):
+        return LRSplineVolume
+    raise ValueError("Unknown LRSpline object type: '{}'".format(peek[:20]))
+
+
 class SimpleWrapper:
 
     def __init__(self, lr, w):
@@ -260,6 +273,17 @@ class LRSplineObject:
         self.elements = ElementView(self)
         self.basis = BasisView(self)
 
+    @staticmethod
+    def read_many(stream):
+        objects = []
+        while True:
+            try:
+                cls = _constructor(stream)
+                objects.append(cls(stream))
+            except raw.EOFError:
+                break
+        return objects
+
     def __len__(self):
         return len(self.basis)
 
@@ -378,6 +402,14 @@ class LRSplineSurface(LRSplineObject):
         super().__init__(w)
         self.meshlines = MeshLineView(self)
 
+    def corners(self):
+        return np.array([
+            next(self.basis.edge('east', 'south')).controlpoint,
+            next(self.basis.edge('west', 'south')).controlpoint,
+            next(self.basis.edge('east', 'north')).controlpoint,
+            next(self.basis.edge('west', 'north')).controlpoint,
+        ])
+
     def clone(self):
         return LRSplineSurface(self.w.copy())
 
@@ -443,6 +475,18 @@ class LRSplineVolume(LRSplineObject):
                 w.read(arg)
         super().__init__(w)
         self.meshrects = MeshRectView(self)
+
+    def corners(self):
+        return np.array([
+            next(self.basis.edge('east', 'south', 'bottom')).controlpoint,
+            next(self.basis.edge('west', 'south', 'bottom')).controlpoint,
+            next(self.basis.edge('east', 'north', 'bottom')).controlpoint,
+            next(self.basis.edge('west', 'north', 'bottom')).controlpoint,
+            next(self.basis.edge('east', 'south', 'top')).controlpoint,
+            next(self.basis.edge('west', 'south', 'top')).controlpoint,
+            next(self.basis.edge('east', 'north', 'top')).controlpoint,
+            next(self.basis.edge('west', 'north', 'top')).controlpoint,
+        ])
 
     def clone(self):
         return LRSplineVolume(self.w.copy())
