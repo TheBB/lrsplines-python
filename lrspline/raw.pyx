@@ -150,6 +150,30 @@ cdef extern from 'LRSpline/LRSplineVolume.h' namespace 'LR':
         MeshRectangle_* insert_line(MeshRectangle_* newRect)
 
 
+def _is_start(stream):
+    peek = stream.peek(20)
+    if not peek:
+        return True
+    if isinstance(peek, str):
+        return peek.startswith('# LRSPLINE')
+    return peek.startswith(b'# LRSPLINE')
+
+
+class EOFError(Exception):
+    pass
+
+
+def _read_object(stream):
+    lines = [stream.readline()]
+    while not _is_start(stream):
+        lines.append(stream.readline())
+    if len(lines) <= 1:
+        raise EOFError('No LRSpline object found')
+    if isinstance(lines[0], str):
+        return ''.join(lines)
+    return b''.join(lines)
+
+
 cdef class Basisfunction:
 
     cdef Basisfunction_* w
@@ -409,8 +433,8 @@ cdef class LRSurface(LRSplineObject):
 
     def read(self, stream):
         cdef string cppstring
-        if hasattr(stream, 'read'):
-            stream = stream.read()
+        if hasattr(stream, 'readline'):
+            stream = _read_object(stream)
         if isinstance(stream, str):
             cppstring = stream.encode()
         elif isinstance(stream, bytes):
@@ -519,8 +543,8 @@ cdef class LRVolume(LRSplineObject):
 
     def read(self, stream):
         cdef string cppstring
-        if hasattr(stream, 'read'):
-            stream = stream.read()
+        if hasattr(stream, 'readline'):
+            stream = _read_object(stream)
         if isinstance(stream, str):
             cppstring = stream.encode()
         elif isinstance(stream, bytes):
