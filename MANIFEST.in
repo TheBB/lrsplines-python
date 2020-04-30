@@ -1,1 +1,2 @@
 include submodules/LRSplines/include/LRSpline/*.h
+include submodules/LRSplines/src/*.cpp

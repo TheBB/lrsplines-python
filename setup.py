@@ -27,7 +27,7 @@ else:
 
 
 # If we're not using Cython, the cythonized sources must be in the
-# file tree.  This is automatically taken care of by sdist.
+# file tree.  This is taken care of by sdist (see MANIFEST.in)
 if not HAS_CYTHON:
     assert all(path.exists(fn + '.cpp') for fn in EXTENSION_FILES)
 
