@@ -2,6 +2,13 @@
 LRSplines
 =========
 
+.. image:: https://badge.fury.io/py/LRSplines.svg
+   :target: https://badge.fury.io/py/LRSplines
+
+.. image:: https://travis-ci.org/TheBB/lrsplines-python.svg?branch=master
+   :target: https://travis-ci.org/TheBB/lrsplines-python
+
+
 This is a cython-based Python wrapper around the `LRSplines
 <https://github.com/VikingScientist/LRsplines>`_ library, a C++ implementation
 of locally refined B-splines.
