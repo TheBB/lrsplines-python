@@ -6,19 +6,64 @@ from setuptools.command.build_ext import build_ext
 from distutils.extension import Extension
 from subprocess import run
 from os import path, makedirs
-from Cython.Build import cythonize
 
 
-LRSPLINES = path.abspath(path.join(path.dirname(__file__), 'submodules', 'LRSplines'))
-SOURCES = [
-    'submodules/LRSplines/src/Basisfunction.cpp',
-    'submodules/LRSplines/src/Element.cpp',
-    'submodules/LRSplines/src/Meshline.cpp',
-    'submodules/LRSplines/src/MeshRectangle.cpp',
-    'submodules/LRSplines/src/LRSpline.cpp',
-    'submodules/LRSplines/src/LRSplineSurface.cpp',
-    'submodules/LRSplines/src/LRSplineVolume.cpp',
+# Path of .pyx files, without extension
+EXTENSION_FILES = ['lrsplines', 'lrspline/raw']
+
+
+# If Cython is installed AND all pyx files are included, use Cython.
+# This will generate C++ sources at install/build time.  Cython
+# sources are not included in a source package, and we don't rely on
+# Cython being available in the installing environment anyway.
+if all(path.exists(fn + '.pyx') for fn in EXTENSION_FILES):
+    try:
+        from Cython.Build import cythonize
+        HAS_CYTHON = True
+    except ImportError:
+        HAS_CYTHON = False
+else:
+    HAS_CYTHON = False
+
+
+# If we're not using Cython, the cythonized sources must be in the
+# file tree.  This is automatically taken care of by sdist.
+if not HAS_CYTHON:
+    assert all(path.exists(fn + '.cpp') for fn in EXTENSION_FILES)
+
+
+# Specify the C++ library files that must also be included
+LRSPLINES_PATH = path.abspath(path.join(path.dirname(__file__), 'submodules', 'LRSplines'))
+LRSPLINES_SOURCES = [
+    path.join(LRSPLINES_PATH, 'src', 'Basisfunction.cpp'),
+    path.join(LRSPLINES_PATH, 'src', 'Element.cpp'),
+    path.join(LRSPLINES_PATH, 'src', 'Meshline.cpp'),
+    path.join(LRSPLINES_PATH, 'src', 'MeshRectangle.cpp'),
+    path.join(LRSPLINES_PATH, 'src', 'LRSpline.cpp'),
+    path.join(LRSPLINES_PATH, 'src', 'LRSplineSurface.cpp'),
+    path.join(LRSPLINES_PATH, 'src', 'LRSplineVolume.cpp'),
 ]
+
+
+# Create extension objects, using either pyx or cpp file extension as required
+EXTENSIONS = [
+    Extension(
+        'lrsplines',
+        ['lrsplines.' + ('pyx' if HAS_CYTHON else 'cpp'), *LRSPLINES_SOURCES],
+        include_dirs=[path.join(LRSPLINES_PATH, 'include')],
+        extra_compile_args=['-std=c++11'],
+    ),
+    Extension(
+        'lrspline.raw',
+        ['lrspline/raw.' + ('pyx' if HAS_CYTHON else 'cpp'), *LRSPLINES_SOURCES],
+        include_dirs=[path.join(LRSPLINES_PATH, 'include')],
+        extra_compile_args=['-std=c++11'],
+    ),
+]
+
+if HAS_CYTHON:
+    EXTENSIONS = cythonize(EXTENSIONS)
+
 
 with open(Path(__file__).parent / 'README.rst') as f:
     desc = f.read()
@@ -35,20 +80,7 @@ setup(
     maintainer_email='eivind.fonn@sintef.no',
     license='GNU public license v3',
     packages=find_packages(),
-    ext_modules=cythonize([
-        Extension(
-            'lrsplines',
-            ['lrsplines.pyx', *SOURCES],
-            include_dirs=[path.join(LRSPLINES, 'include')],
-            extra_compile_args=['-std=c++11'],
-        ),
-        Extension(
-            'lrspline.raw',
-            ['lrspline/raw.pyx', *SOURCES],
-            include_dirs=[path.join(LRSPLINES, 'include')],
-            extra_compile_args=['-std=c++11'],
-        )
-    ]),
+    ext_modules=EXTENSIONS,
     install_requires=['numpy'],
     classifiers=[
         'Development Status :: 4 - Beta',
