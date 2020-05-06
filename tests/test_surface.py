@@ -12,12 +12,7 @@ def srf():
         return lr.LRSplineSurface(f)
 
 
-@fixture
-def vol():
-    with open(path / 'mesh02.lr', 'rb') as f:
-        return lr.LRSplineVolume(f)
-
-def test_constructors():
+def test_raw_constructors():
     srf = raw.LRSurface()
     assert srf.nBasisFunctions() == 0
     assert srf.nElements() == 0
@@ -53,7 +48,7 @@ def test_constructors():
     # np.testing.assert_allclose(srf.point(1.456, 2.2), [0.456, 2.2])
     # np.testing.assert_allclose(srf.point(3.199, 2.8), [3.199, 2.8])
 
-def test_srf_numbers(srf):
+def test_srf_from_file(srf):
     np.testing.assert_allclose(srf(0.0, 0.0), [0.0, 0.0])
     assert len(srf.basis) == 1229
     assert len(list(srf.basis.edge('south'))) == 15
@@ -61,11 +56,3 @@ def test_srf_numbers(srf):
     assert len(list(srf.elements.edge('south'))) == 14
     assert len(srf.meshlines) == 130
 
-
-def test_vol_numbers(vol):
-    np.testing.assert_allclose(vol(0.0, 0.0, 0.0), [0.0, 0.0, 0.0])
-    assert len(vol.basis) == 1176
-    assert len(list(vol.basis.edge('south'))) == 90
-    assert len(vol.elements) == 1240
-    assert len(list(vol.elements.edge('south'))) == 70
-    assert len(vol.meshrects) == 189
