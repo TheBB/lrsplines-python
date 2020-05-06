@@ -32,22 +32,12 @@ def test_raw_constructors():
     assert vol.nElements() == 16
 
     knot1 = [0,0,0,1,2,3,4,4,4]
-    knot2 = [1,1,1,2,2,3,3,3]
-    knot3 = [2,2,2,3,4,4,4]
-    # choose greville points as controlpoints gives linear mapping x(u,v) = u, y(u,v)=v
-    cp = [[[[(x0+x1)/2, (y0+y1)/2, (z0+z1)/2] for x0,x1 in zip(knot1[1:-3], knot1[2:-2])] for y0,y1 in zip(knot2[1:-3], knot2[2:-2])] for z0,z1 in zip(knot3[1:-3], knot3[2:-2])]
-    cp = np.ndarray.flatten(np.array(cp))
-    vol = raw.LRVolume(n1=6, n2=5, n3=4, order_u=3, order_v=3, order_w=3, knot1=knot1, knot2=knot2, knot3=knot3, coef=cp)
-    assert vol.nBasisFunctions() == 120
-    assert vol.nElements() == 16
-
-    ### the tests below result in errors. Most probably due to the
-    #   defintion HAS_GOTOOLS which previously have caused issues with the
-    #   point()-method
-
-    # np.testing.assert_allclose(vol.point(0.123, 1.2, 3.1),  [0.123, 1.2, 3.1])
-    # np.testing.assert_allclose(vol.point(1.456, 2.2, 2.54), [0.456, 2.2, 2.54])
-    # np.testing.assert_allclose(vol.point(3.199, 2.8, 2.57), [3.199, 2.8, 2.57])
+    knot2 = [2,2,2,4,6,6,6]
+    knot3 = [4,4,4,8,8,8]
+    cp = list(np.random.random(216))
+    vol = raw.LRVolume(n1=6, n2=4, n3=3, order_u=3, order_v=3, order_w=3, knot1=knot1, knot2=knot2, knot3=knot3, coef=cp)
+    assert vol.nBasisFunctions() == 72
+    assert vol.nElements() == 8
 
 def test_vol_from_file(vol):
     np.testing.assert_allclose(vol(0.0, 0.0, 0.0), [0.0, 0.0, 0.0])

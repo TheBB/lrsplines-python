@@ -571,7 +571,7 @@ cdef class LRSurface(LRSplineObject):
         width  = self.w.order(0) * self.w.order(1)
         height = self.w.getElement(iEl).nBasisFunctions()
         (<LRSplineSurface_*> self.w).getBezierExtraction(iEl, result)
-        return np.reshape(result, (height, width))
+        return np.reshape(result, (height, width), order='F')
 
 
 cdef class LRVolume(LRSplineObject):

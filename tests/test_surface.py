@@ -59,18 +59,31 @@ def test_bezier_extraction():
 
     # two quadratic elements (Note that LR basisfunctions are "randomly" ordered
     # which means that the rows of this matrix can be permuted at a later point)
-    srf = raw.LRSurface(4,3,3,3)
-    expected_C = [[1,  0,  0,  0,  0,  0,  0,  0,  0, ],
-                  [0,  0,  0,  0,  0,  0,  1,  0,  0, ],
-                  [0,  0,  0,  0.5,0,  0,  0.5,0,  0, ],
-                  [0,  1,  0,  0,  0,  0,  0,  0,  0, ],
-                  [0,  0,  0,  0,  0,  0,  0,  1,  0, ],
-                  [0,  0,  0,  0,  0.5,0,  0,  0.5,0, ],
-                  [0,  0,  1,  0,  0,  0,  0,  0,  0, ],
-                  [0,  0,  0,  0,  0,  0,  0,  0,  1, ],
-                  [0,  0,  0,  0,  0,  0.5,0,  0,  0.5]]
-    np.testing.assert_allclose(srf.getBezierExtraction(0), expected_C)
+    srf = lr.LRSplineSurface(4,3,3,3)
+    example_C = [[1,  0,  0,  0,  0,  0,  0,  0,  0, ],# the leftmost columns
+                 [0,  0,  0,  1,  0,  0,  0,  0,  0, ],# should have exactly one 1
+                 [0,  0,  0,  0,  0,  0,  1,  0,  0, ],
+                 [0,  0,  0.5,0,  0,  0,  0,  0,  0, ],# the rightmost columns
+                 [0,  0,  0,  0,  0,  0.5,0,  0,  0, ],# should have one 0.5's
+                 [0,  0,  0,  0,  0,  0,  0,  0,  0.5],
+                 [0,  1,  0.5,0,  0,  0,  0,  0,  0, ],# the center column
+                 [0,  0,  0,  0,  1,  0.5,0,  0,  0, ],# should contain [1,.5]
+                 [0,  0,  0,  0,  0,  0,  0,  1,  0.5]]
 
+    C = srf.getBezierExtraction(0)
+    for i,bf in enumerate(srf.elements[0].support()):
+        if bf[0][1] == 0.5: # rightmost function of left element
+            assert np.sum(C[i]) == 0.5
+            assert np.max(C[i]) == 0.5
+            assert np.count_nonzero(C[i]) == 1
+        elif bf[0][2] == 0.5: # center column
+            assert np.sum(C[i]) == 1.5
+            assert np.max(C[i]) == 1.0
+            assert np.count_nonzero(C[i]) == 2
+        else: # leftmost column
+            assert np.sum(C[i]) == 1
+            assert np.max(C[i]) == 1
+            assert np.count_nonzero(C[i]) == 1
 
 def test_srf_from_file(srf):
     np.testing.assert_allclose(srf(0.0, 0.0), [0.0, 0.0])

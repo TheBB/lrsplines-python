@@ -479,6 +479,9 @@ class LRSplineSurface(LRSplineObject):
             return np.array(retval).reshape(u.shape)
         return self.w.point(u, v, nderivs, iEl=iel)[index]
 
+    def getBezierExtraction(self, iEl):
+        return self.w.getBezierExtraction(iEl)
+
     __call__ = evaluate
 
 
@@ -528,6 +531,9 @@ class LRSplineVolume(LRSplineObject):
             retval = np.array([self.w.point(up, vp, wp, iEl=iel) for up, vp, wp in zip(u.flat, v.flat, w.flat)])
             return retval.reshape(u.shape)
         return self.w.point(u, v, w, iEl=iel)
+
+    def getBezierExtraction(self, iEl):
+        return self.w.getBezierExtraction(iEl)
 
     def derivative(self, u, v, w, d=(1,1,1), iel=-1):
         nderivs = sum(d)
