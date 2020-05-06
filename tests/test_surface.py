@@ -80,3 +80,12 @@ def test_srf_from_file(srf):
     assert len(list(srf.elements.edge('south'))) == 14
     assert len(srf.meshlines) == 130
 
+
+def test_evaluate():
+    # testing identity mapping x(u,v) = u; y(u,v) = v
+    srf = lr.LRSplineSurface(2,2,2,2)
+    np.testing.assert_allclose(srf(0.123, 0.323), [0.123, 0.323])
+
+    srf = lr.LRSplineSurface(6,5,4,3)
+    np.testing.assert_allclose(srf(0.123, 0.323), [0.123, 0.323])
+    np.testing.assert_allclose(srf(0.987, 0.555), [0.987, 0.555])

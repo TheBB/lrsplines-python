@@ -37,7 +37,6 @@ def test_raw_constructors():
     # choose greville points as controlpoints gives linear mapping x(u,v) = u, y(u,v)=v
     cp = [[[[(x0+x1)/2, (y0+y1)/2, (z0+z1)/2] for x0,x1 in zip(knot1[1:-3], knot1[2:-2])] for y0,y1 in zip(knot2[1:-3], knot2[2:-2])] for z0,z1 in zip(knot3[1:-3], knot3[2:-2])]
     cp = np.ndarray.flatten(np.array(cp))
-    print(cp)
     vol = raw.LRVolume(n1=6, n2=5, n3=4, order_u=3, order_v=3, order_w=3, knot1=knot1, knot2=knot2, knot3=knot3, coef=cp)
     assert vol.nBasisFunctions() == 120
     assert vol.nElements() == 16
@@ -58,3 +57,11 @@ def test_vol_from_file(vol):
     assert len(list(vol.elements.edge('south'))) == 70
     assert len(vol.meshrects) == 189
 
+def test_evaluate():
+    # testing identity mapping x(u,v) = u; y(u,v) = v
+    srf = lr.LRSplineVolume(2,2,2,2,2,2)
+    np.testing.assert_allclose(srf(0.123, 0.323, 0.456), [0.123, 0.323, 0.456])
+
+    srf = lr.LRSplineVolume(8,7,6,5,4,3) # n=(8,7,6), p=(5,4,3)
+    np.testing.assert_allclose(srf(0.123, 0.323, 0.872), [0.123, 0.323, 0.872])
+    np.testing.assert_allclose(srf(0.987, 0.555, 0.622), [0.987, 0.555, 0.622])
