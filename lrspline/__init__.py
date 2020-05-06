@@ -81,6 +81,9 @@ class BasisFunction(SimpleWrapper):
         ])
         return retval.reshape(u.shape)
 
+    def __getitem__(self, idx):
+        return self.w.getknots(idx)
+
     __call__ = evaluate
 
     def refine(self):
@@ -389,6 +392,9 @@ class LRSplineObject:
 
     def __rmul__(self, x):
         return self * x
+
+    def __getitem__(self, i):
+        return self.basis[i].controlpoint
 
 
 class LRSplineSurface(LRSplineObject):

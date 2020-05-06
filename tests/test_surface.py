@@ -89,3 +89,10 @@ def test_evaluate():
     srf = lr.LRSplineSurface(6,5,4,3)
     np.testing.assert_allclose(srf(0.123, 0.323), [0.123, 0.323])
     np.testing.assert_allclose(srf(0.987, 0.555), [0.987, 0.555])
+
+
+def test_get_controlpoint():
+    srf = lr.LRSplineSurface(3,3,3,3)
+    # all controlpoints srf[i] should equal the greville absiccae
+    for i,bf in enumerate(srf.basis):
+        np.testing.assert_allclose(srf[i], [np.mean(bf[0][1:3]), np.mean(bf[1][1:3])])

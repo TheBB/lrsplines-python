@@ -38,6 +38,7 @@ cdef extern from 'LRSpline/Basisfunction.h' namespace 'LR':
         void evaluate(vector[double]& results, double u, double v, int derivs, bool u_from_right, bool v_from_right) const
         double evaluate(double u, double v, double w, bool u_from_right, bool v_from_right, bool w_from_right) const
         void evaluate(vector[double]& results, double u, double v, double w, int derivs, bool u_from_right, bool v_from_right, bool w_from_right) const
+        vector[double]& getknots(int i)
 
 cdef extern from 'LRSpline/Element.h' namespace 'LR':
     cdef cppclass Element_ 'LR::Element':
@@ -216,6 +217,9 @@ cdef class Basisfunction:
             self.w.evaluate(results, <double> u, <double> v, <double> w, <int> d, <bool> ufr, <bool> vfr, <bool> wfr)
             return np.array(results)
         raise TypeError("evaluate() expected 4, 5, 6 or 7 arguments")
+
+    def getknots(self, idx):
+        return np.array(self.w.getknots(idx))
 
 
 cdef class Element:
