@@ -48,6 +48,30 @@ def test_raw_constructors():
     # np.testing.assert_allclose(srf.point(1.456, 2.2), [0.456, 2.2])
     # np.testing.assert_allclose(srf.point(3.199, 2.8), [3.199, 2.8])
 
+def test_bezier_extraction():
+    # single linear element: 4x4 identity matrix
+    srf = raw.LRSurface(2,2,2,2)
+    np.testing.assert_allclose(srf.getBezierExtraction(0), np.identity(4))
+
+    # single quadratic element: 9x9 identity matrix
+    srf = raw.LRSurface(3,3,3,3)
+    np.testing.assert_allclose(srf.getBezierExtraction(0), np.identity(9))
+
+    # two quadratic elements (Note that LR basisfunctions are "randomly" ordered
+    # which means that the rows of this matrix can be permuted at a later point)
+    srf = raw.LRSurface(4,3,3,3)
+    expected_C = [[1,  0,  0,  0,  0,  0,  0,  0,  0, ],
+                  [0,  0,  0,  0,  0,  0,  1,  0,  0, ],
+                  [0,  0,  0,  0.5,0,  0,  0.5,0,  0, ],
+                  [0,  1,  0,  0,  0,  0,  0,  0,  0, ],
+                  [0,  0,  0,  0,  0,  0,  0,  1,  0, ],
+                  [0,  0,  0,  0,  0.5,0,  0,  0.5,0, ],
+                  [0,  0,  1,  0,  0,  0,  0,  0,  0, ],
+                  [0,  0,  0,  0,  0,  0,  0,  0,  1, ],
+                  [0,  0,  0,  0,  0,  0.5,0,  0,  0.5]]
+    np.testing.assert_allclose(srf.getBezierExtraction(0), expected_C)
+
+
 def test_srf_from_file(srf):
     np.testing.assert_allclose(srf(0.0, 0.0), [0.0, 0.0])
     assert len(srf.basis) == 1229

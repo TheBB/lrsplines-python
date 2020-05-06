@@ -45,6 +45,7 @@ cdef extern from 'LRSpline/Element.h' namespace 'LR':
         int getDim()
         double getParmin(int)
         double getParmax(int)
+        int nBasisFunctions()
         HashSet_iterator[Basisfunction_*] supportBegin()
         HashSet_iterator[Basisfunction_*] supportEnd()
 
@@ -134,6 +135,7 @@ cdef extern from 'LRSpline/LRSplineSurface.h' namespace 'LR':
         vector[Meshline_*].iterator meshlineEnd()
         int nMeshlines() const
         Meshline_* getMeshline(int i)
+        void getBezierExtraction(int iEl, vector[double]& extractionMatrix)
 
 cdef extern from 'LRSpline/LRSplineVolume.h' namespace 'LR':
     cdef cppclass LRSplineVolume_ 'LR::LRSplineVolume' (LRSpline_):
@@ -155,6 +157,7 @@ cdef extern from 'LRSpline/LRSplineVolume.h' namespace 'LR':
         int nMeshRectangles() const
         MeshRectangle_* getMeshRectangle(int i)
         MeshRectangle_* insert_line(MeshRectangle_* newRect)
+        void getBezierExtraction(int iEl, vector[double]& extractionMatrix)
 
 
 def _is_start(stream):
@@ -230,6 +233,9 @@ cdef class Element:
 
     def getParmax(self, i):
         return self.w.getParmax(i)
+
+    def nBasisFunctions(self):
+        return self.w.nBasisFunctions()
 
     def supportIter(self):
         cdef HashSet_iterator[Basisfunction_*] it = self.w.supportBegin()
@@ -428,7 +434,6 @@ cdef class LRSplineObject:
     def setMaxAspectRatio(self, double r, bool aposteriori=True):
         self.w.setMaxAspectRatio(r, aposteriori)
 
-
 cdef class LRSurface(LRSplineObject):
 
     def __cinit__(self, n1=None, n2=None, order_u=None, order_v=None, knot1=None, knot2=None, coef=None, dim=2):
@@ -557,6 +562,13 @@ cdef class LRSurface(LRSplineObject):
         (<LRSplineSurface_*> self.w).getGlobalUniqueKnotVector(ktsu, ktsv)
         return (np.array(ktsu), np.array(ktsv))
 
+    def getBezierExtraction(self, iEl=-1):
+        cdef vector[double] result
+        width  = self.w.order(0) * self.w.order(1)
+        height = self.w.getElement(iEl).nBasisFunctions()
+        (<LRSplineSurface_*> self.w).getBezierExtraction(iEl, result)
+        return np.reshape(result, (height, width))
+
 
 cdef class LRVolume(LRSplineObject):
 
@@ -676,3 +688,10 @@ cdef class LRVolume(LRSplineObject):
         cdef vector[double] ktsw
         (<LRSplineVolume_*> self.w).getGlobalUniqueKnotVector(ktsu, ktsv, ktsw)
         return (np.array(ktsu), np.array(ktsv), np.array(ktsw))
+
+    def getBezierExtraction(self, iEl=-1):
+        cdef vector[double] result
+        width  = self.w.order(0) * self.w.order(1) * self.w.order(2)
+        height = self.w.getElement(iEl).nBasisFunctions()
+        (<LRSplineVolume_*> self.w).getBezierExtraction(iEl, result)
+        return np.reshape(result, (height, width))
