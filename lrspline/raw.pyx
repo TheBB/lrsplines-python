@@ -441,9 +441,9 @@ cdef class LRSplineObject:
 cdef class LRSurface(LRSplineObject):
 
     def __cinit__(self, n1=None, n2=None, order_u=None, order_v=None, knot1=None, knot2=None, coef=None, dim=2):
-        cdef array.array knot1_arr;
-        cdef array.array knot2_arr;
-        cdef array.array coef_arr;
+        cdef array.array knot1_arr
+        cdef array.array knot2_arr
+        cdef array.array coef_arr
         if knot1 is not None and knot2 is not None and coef is not None:
             knot1_arr = array.array('d', knot1)
             knot2_arr = array.array('d', knot2)
@@ -577,10 +577,10 @@ cdef class LRSurface(LRSplineObject):
 cdef class LRVolume(LRSplineObject):
 
     def __cinit__(self, n1=None, n2=None, n3=None, order_u=None, order_v=None, order_w=None, knot1=None, knot2=None, knot3=None, coef=None, dim=3):
-        cdef array.array knot1_arr;
-        cdef array.array knot2_arr;
-        cdef array.array knot3_arr;
-        cdef array.array coef_arr;
+        cdef array.array knot1_arr
+        cdef array.array knot2_arr
+        cdef array.array knot3_arr
+        cdef array.array coef_arr
         if knot1 is not None and knot2 is not None and knot3 is not None and coef is not None:
             knot1_arr = array.array('d', knot1)
             knot2_arr = array.array('d', knot2)

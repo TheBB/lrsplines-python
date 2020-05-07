@@ -404,16 +404,16 @@ class LRSplineSurface(LRSplineObject):
             w = raw.LRSurface()
         elif isinstance(args[0], raw.LRSurface):
             w = arg
-        elif isinstance(args[0], io.IOBase):
+        elif isinstance(args[0], (io.IOBase,str,bytes)):
             w = raw.LRSurface()
             w.read(args[0])
-        elif len(args) == 2:
+        elif len(args) == 2: # specify (n1,n2)
             w = raw.LRSurface(args[0], args[1], 2, 2)
-        elif len(args) == 4:
+        elif len(args) == 4: # specify (n1,n2) and (p1,p2)
             w = raw.LRSurface(args[0], args[1], args[2], args[3])
-        elif len(args) == 6:
+        elif len(args) == 6: # specify (n1,n2), (p1,p2) and (knot1,knot2)
             w = raw.LRSurface(args[0], args[1], args[2], args[3], args[4], args[5])
-        elif len(args) == 7:
+        elif len(args) == 7: # specify controlpoints in addition
             w = raw.LRSurface(args[0], args[1], args[2], args[3], args[4], args[5], args[6])
         else:
             w = raw.LRSurface()
@@ -479,7 +479,7 @@ class LRSplineSurface(LRSplineObject):
             return np.array(retval).reshape(u.shape)
         return self.w.point(u, v, nderivs, iEl=iel)[index]
 
-    def getBezierExtraction(self, iEl):
+    def bezier_extraction(self, iEl):
         return self.w.getBezierExtraction(iEl)
 
     __call__ = evaluate
@@ -492,7 +492,7 @@ class LRSplineVolume(LRSplineObject):
             w = raw.LRVolume()
         elif isinstance(args[0], raw.LRVolume):
             w = arg
-        elif isinstance(args[0], io.IOBase):
+        elif isinstance(args[0], (io.IOBase,str,bytes)):
             w = raw.LRVolume()
             w.read(args[0])
         elif len(args) == 3: # only specify number of functions (n1,n2,n3)
@@ -532,7 +532,7 @@ class LRSplineVolume(LRSplineObject):
             return retval.reshape(u.shape)
         return self.w.point(u, v, w, iEl=iel)
 
-    def getBezierExtraction(self, iEl):
+    def bezier_extraction(self, iEl):
         return self.w.getBezierExtraction(iEl)
 
     def derivative(self, u, v, w, d=(1,1,1), iel=-1):
