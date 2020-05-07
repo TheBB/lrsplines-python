@@ -5,6 +5,7 @@ from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from cython.operator cimport dereference as deref, preincrement as preinc
+from cpython cimport array
 
 import numpy as np
 
@@ -37,6 +38,7 @@ cdef extern from 'LRSpline/Basisfunction.h' namespace 'LR':
         void evaluate(vector[double]& results, double u, double v, int derivs, bool u_from_right, bool v_from_right) const
         double evaluate(double u, double v, double w, bool u_from_right, bool v_from_right, bool w_from_right) const
         void evaluate(vector[double]& results, double u, double v, double w, int derivs, bool u_from_right, bool v_from_right, bool w_from_right) const
+        vector[double]& getknots(int i)
 
 cdef extern from 'LRSpline/Element.h' namespace 'LR':
     cdef cppclass Element_ 'LR::Element':
@@ -44,6 +46,7 @@ cdef extern from 'LRSpline/Element.h' namespace 'LR':
         int getDim()
         double getParmin(int)
         double getParmax(int)
+        int nBasisFunctions()
         HashSet_iterator[Basisfunction_*] supportBegin()
         HashSet_iterator[Basisfunction_*] supportEnd()
 
@@ -111,7 +114,10 @@ cdef extern from 'LRSpline/LRSpline.h' namespace 'LR':
 
 cdef extern from 'LRSpline/LRSplineSurface.h' namespace 'LR':
     cdef cppclass LRSplineSurface_ 'LR::LRSplineSurface' (LRSpline_):
-        LRSplineSurface() except +
+        LRSplineSurface_() except +
+        LRSplineSurface_(int n1, int n2, int order_u, int order_v) except +
+        LRSplineSurface_(int n1, int n2, int order_u, int order_v, double* knot1, double* knot2) except +
+        LRSplineSurface_(int n1, int n2, int order_u, int order_v, double* knot1, double* knot2, double* coef, int dim) except +
         LRSplineSurface_* copy()
         void read(istream) except +
         void write(ostream) except +
@@ -130,10 +136,14 @@ cdef extern from 'LRSpline/LRSplineSurface.h' namespace 'LR':
         vector[Meshline_*].iterator meshlineEnd()
         int nMeshlines() const
         Meshline_* getMeshline(int i)
+        void getBezierExtraction(int iEl, vector[double]& extractionMatrix)
 
 cdef extern from 'LRSpline/LRSplineVolume.h' namespace 'LR':
     cdef cppclass LRSplineVolume_ 'LR::LRSplineVolume' (LRSpline_):
-        LRSplineVolume() except +
+        LRSplineVolume_() except +
+        LRSplineVolume_(int n1, int n2, int n3, int order_u, int order_v, int order_w) except +
+        LRSplineVolume_(int n1, int n2, int n3, int order_u, int order_v, int order_w, double* knot1, double* knot2, double *knot3) except +
+        LRSplineVolume_(int n1, int n2, int n3, int order_u, int order_v, int order_w, double* knot1, double* knot2, double *knot3, double* coef, int dim) except +
         LRSplineVolume_* copy()
         void read(istream) except +
         void write(ostream) except +
@@ -148,6 +158,7 @@ cdef extern from 'LRSpline/LRSplineVolume.h' namespace 'LR':
         int nMeshRectangles() const
         MeshRectangle_* getMeshRectangle(int i)
         MeshRectangle_* insert_line(MeshRectangle_* newRect)
+        void getBezierExtraction(int iEl, vector[double]& extractionMatrix)
 
 
 def _is_start(stream):
@@ -207,6 +218,9 @@ cdef class Basisfunction:
             return np.array(results)
         raise TypeError("evaluate() expected 4, 5, 6 or 7 arguments")
 
+    def getknots(self, idx):
+        return np.array(self.w.getknots(idx))
+
 
 cdef class Element:
 
@@ -223,6 +237,9 @@ cdef class Element:
 
     def getParmax(self, i):
         return self.w.getParmax(i)
+
+    def nBasisFunctions(self):
+        return self.w.nBasisFunctions()
 
     def supportIter(self):
         cdef HashSet_iterator[Basisfunction_*] it = self.w.supportBegin()
@@ -421,11 +438,29 @@ cdef class LRSplineObject:
     def setMaxAspectRatio(self, double r, bool aposteriori=True):
         self.w.setMaxAspectRatio(r, aposteriori)
 
-
 cdef class LRSurface(LRSplineObject):
 
-    def __cinit__(self, w=None):
-        self.w = new LRSplineSurface_()
+    def __cinit__(self, n1=None, n2=None, order_u=None, order_v=None, knot1=None, knot2=None, coef=None, dim=2):
+        cdef array.array knot1_arr
+        cdef array.array knot2_arr
+        cdef array.array coef_arr
+        if knot1 is not None and knot2 is not None and coef is not None:
+            knot1_arr = array.array('d', knot1)
+            knot2_arr = array.array('d', knot2)
+            coef_arr  = array.array('d', coef)
+            self.w = new LRSplineSurface_(n1, n2, order_u, order_v, knot1_arr.data.as_doubles, knot2_arr.data.as_doubles, coef_arr.data.as_doubles, dim)
+        if knot1 is not None and knot2 is not None:
+            knot1_arr = array.array('d', knot1)
+            knot2_arr = array.array('d', knot2)
+            self.w = new LRSplineSurface_(n1, n2, order_u, order_v, knot1_arr.data.as_doubles, knot2_arr.data.as_doubles)
+            if dim != 2:
+                self.w.rebuildDimension(dim)
+        elif n1!=None and n2!=None and order_u!=None and order_v!=None:
+            self.w = new LRSplineSurface_(n1, n2, order_u, order_v)
+            if dim != 2:
+                self.w.rebuildDimension(dim)
+        else:
+            self.w = new LRSplineSurface_()
 
     cdef _set_w(self, LRSplineSurface_* w):
         del self.w
@@ -531,11 +566,40 @@ cdef class LRSurface(LRSplineObject):
         (<LRSplineSurface_*> self.w).getGlobalUniqueKnotVector(ktsu, ktsv)
         return (np.array(ktsu), np.array(ktsv))
 
+    def getBezierExtraction(self, iEl=-1):
+        cdef vector[double] result
+        width  = self.w.order(0) * self.w.order(1)
+        height = self.w.getElement(iEl).nBasisFunctions()
+        (<LRSplineSurface_*> self.w).getBezierExtraction(iEl, result)
+        return np.reshape(result, (height, width), order='F')
+
 
 cdef class LRVolume(LRSplineObject):
 
-    def __cinit__(self, w=None):
-        self.w = new LRSplineVolume_()
+    def __cinit__(self, n1=None, n2=None, n3=None, order_u=None, order_v=None, order_w=None, knot1=None, knot2=None, knot3=None, coef=None, dim=3):
+        cdef array.array knot1_arr
+        cdef array.array knot2_arr
+        cdef array.array knot3_arr
+        cdef array.array coef_arr
+        if knot1 is not None and knot2 is not None and knot3 is not None and coef is not None:
+            knot1_arr = array.array('d', knot1)
+            knot2_arr = array.array('d', knot2)
+            knot3_arr = array.array('d', knot3)
+            coef_arr  = array.array('d', coef)
+            self.w = new LRSplineVolume_(n1, n2, n3, order_u, order_v, order_w, knot1_arr.data.as_doubles, knot2_arr.data.as_doubles, knot3_arr.data.as_doubles, coef_arr.data.as_doubles, dim)
+        elif knot1 is not None and knot2 is not None and knot3 is not None:
+            knot1_arr = array.array('d', knot1)
+            knot2_arr = array.array('d', knot2)
+            knot3_arr = array.array('d', knot3)
+            self.w = new LRSplineVolume_(n1, n2, n3, order_u, order_v, order_w, knot1_arr.data.as_doubles, knot2_arr.data.as_doubles, knot3_arr.data.as_doubles)
+            if dim != 3:
+                self.w.rebuildDimension(dim)
+        elif n1!=None and n2!=None and n3!=None and order_u!=None and order_v!=None and order_w!=None:
+            self.w = new LRSplineVolume_(n1, n2, n3, order_u, order_v, order_w)
+            if dim != 3:
+                self.w.rebuildDimension(dim)
+        else:
+            self.w = new LRSplineVolume_()
 
     cdef _set_w(self, LRSplineVolume_* w):
         del self.w
@@ -628,3 +692,10 @@ cdef class LRVolume(LRSplineObject):
         cdef vector[double] ktsw
         (<LRSplineVolume_*> self.w).getGlobalUniqueKnotVector(ktsu, ktsv, ktsw)
         return (np.array(ktsu), np.array(ktsv), np.array(ktsw))
+
+    def getBezierExtraction(self, iEl=-1):
+        cdef vector[double] result
+        width  = self.w.order(0) * self.w.order(1) * self.w.order(2)
+        height = self.w.getElement(iEl).nBasisFunctions()
+        (<LRSplineVolume_*> self.w).getBezierExtraction(iEl, result)
+        return np.reshape(result, (height, width))

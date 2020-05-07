@@ -1,5 +1,6 @@
 from functools import partial
 import operator as op
+import io
 import numpy as np
 from itertools import combinations_with_replacement, repeat, chain
 
@@ -79,6 +80,9 @@ class BasisFunction(SimpleWrapper):
             for up, vp in zip(u.flat, v.flat)
         ])
         return retval.reshape(u.shape)
+
+    def __getitem__(self, idx):
+        return self.w.getknots(idx)
 
     __call__ = evaluate
 
@@ -389,16 +393,30 @@ class LRSplineObject:
     def __rmul__(self, x):
         return self * x
 
+    def __getitem__(self, i):
+        return self.basis[i].controlpoint
+
 
 class LRSplineSurface(LRSplineObject):
 
-    def __init__(self, arg=None):
-        if isinstance(arg, raw.LRSurface):
+    def __init__(self, *args):
+        if len(args) == 0:
+            w = raw.LRSurface()
+        elif isinstance(args[0], raw.LRSurface):
             w = arg
+        elif isinstance(args[0], (io.IOBase,str,bytes)):
+            w = raw.LRSurface()
+            w.read(args[0])
+        elif len(args) == 2: # specify (n1,n2)
+            w = raw.LRSurface(args[0], args[1], 2, 2)
+        elif len(args) == 4: # specify (n1,n2) and (p1,p2)
+            w = raw.LRSurface(args[0], args[1], args[2], args[3])
+        elif len(args) == 6: # specify (n1,n2), (p1,p2) and (knot1,knot2)
+            w = raw.LRSurface(args[0], args[1], args[2], args[3], args[4], args[5])
+        elif len(args) == 7: # specify controlpoints in addition
+            w = raw.LRSurface(args[0], args[1], args[2], args[3], args[4], args[5], args[6])
         else:
             w = raw.LRSurface()
-            if arg is not None:
-                w.read(arg)
         super().__init__(w)
         self.meshlines = MeshLineView(self)
 
@@ -461,18 +479,32 @@ class LRSplineSurface(LRSplineObject):
             return np.array(retval).reshape(u.shape)
         return self.w.point(u, v, nderivs, iEl=iel)[index]
 
+    def bezier_extraction(self, iEl):
+        return self.w.getBezierExtraction(iEl)
+
     __call__ = evaluate
 
 
 class LRSplineVolume(LRSplineObject):
 
-    def __init__(self, arg=None):
-        if isinstance(arg, raw.LRVolume):
+    def __init__(self, *args):
+        if len(args) == 0:
+            w = raw.LRVolume()
+        elif isinstance(args[0], raw.LRVolume):
             w = arg
+        elif isinstance(args[0], (io.IOBase,str,bytes)):
+            w = raw.LRVolume()
+            w.read(args[0])
+        elif len(args) == 3: # only specify number of functions (n1,n2,n3)
+            w = raw.LRVolume(args[0], args[1], args[2], 2, 2, 2)
+        elif len(args) == 6: # specity n & p for 3 directions
+            w = raw.LRVolume(*args)
+        elif len(args) == 9: # specify n,p and knotvector for 3 directions
+            w = raw.LRVolume(*args)
+        elif len(args) == 10: # specify all above in addition to controlpoints
+            w = raw.LRVolume(*args)
         else:
             w = raw.LRVolume()
-            if arg is not None:
-                w.read(arg)
         super().__init__(w)
         self.meshrects = MeshRectView(self)
 
@@ -499,6 +531,9 @@ class LRSplineVolume(LRSplineObject):
             retval = np.array([self.w.point(up, vp, wp, iEl=iel) for up, vp, wp in zip(u.flat, v.flat, w.flat)])
             return retval.reshape(u.shape)
         return self.w.point(u, v, w, iEl=iel)
+
+    def bezier_extraction(self, iEl):
+        return self.w.getBezierExtraction(iEl)
 
     def derivative(self, u, v, w, d=(1,1,1), iel=-1):
         nderivs = sum(d)
