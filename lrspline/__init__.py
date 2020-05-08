@@ -35,7 +35,7 @@ def _check_edge(edge):
 
 
 def _constructor(stream):
-    peek = stream.peek(20)
+    peek = stream.readline()
     if not peek:
         raise raw.EOFError('')
     if isinstance(peek, bytes):
@@ -44,7 +44,7 @@ def _constructor(stream):
         return LRSplineSurface
     if peek.startswith('# LRSPLINE VOLUME'):
         return LRSplineVolume
-    raise ValueError("Unknown LRSpline object type: '{}'".format(peek[:20]))
+    raise ValueError("Unknown LRSpline object type: '{}'".format(peek))
 
 
 def _derivative_index(d):
