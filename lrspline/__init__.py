@@ -7,6 +7,9 @@ from itertools import combinations_with_replacement, repeat, chain
 from . import raw
 
 
+__version__ = '1.5.3'
+
+
 def _check_direction(direction, pardim):
     if direction in {0, 'u', 'U'} and 0 < pardim:
         return 0
