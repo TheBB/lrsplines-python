@@ -65,6 +65,7 @@ cdef extern from 'LRSpline/MeshRectangle.h' namespace 'LR':
         vector[double] start_
         vector[double] stop_
         int multiplicity_
+        MeshRectangle_* copy()
 
 cdef extern from 'LRSpline/LRSpline.h':
     cdef enum refinementStrategy_ 'refinementStrategy':
@@ -296,6 +297,12 @@ cdef class MeshRectangle:
     @property
     def multiplicity_(self):
         return self.multiplicity_
+
+    def copy(self):
+        cdef MeshRectangle_* copy = self.w.copy()
+        retval = MeshRectangle()
+        retval.w = copy
+        return retval
 
 
 cdef class parameterEdge:
