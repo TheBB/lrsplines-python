@@ -47,6 +47,64 @@ def _constructor(stream):
     raise ValueError("Unknown LRSpline object type: '{}'".format(peek[:20]))
 
 
+def _derivative_index(d):
+    """Calculate the derivative index of 'd' (a 2-tuple or 3-tuple) using
+    LRSplines' derivative numbering scheme.  Return nderivs and index.
+    """
+    nderivs = sum(d)
+    if len(d) == 2:
+        index = sum(dd + 1 for dd in range(nderivs)) + d[1]
+        return nderivs, index
+    index = nderivs * (nderivs + 1) * (nderivs + 2) // 6
+    tgt = tuple(chain.from_iterable(repeat(i,r) for i,r in enumerate(d)))
+    index += next(i for i,t in enumerate(combinations_with_replacement(range(len(d)), nderivs)) if t == tgt)
+    return nderivs, index
+
+
+def _derivative_helper(pts, derivs, func):
+    """Helper for calculating derivatives.
+
+    Pts must be a tuple of points, or a tuple of point arrays.
+
+    Derivs must be a tuple indicating which derivative to take, or a
+    list of such tuples.
+
+    Func must be a callable accepting two or three floats (the point
+    to evaluate) and an 'nderivs' argument, returning a 1-dimensional
+    array.
+
+    - If one point, one deriv: return a 1-dimensional array (coord)
+    - If multiple points, one deriv: return a 2-dimensional array (point x coord)
+    - If one point, multiple derivs: return a 2-dimensional array (deriv x coord)
+    - If multiple points, multiple derivs: return 3-dimensional (deriv x point x coord)
+    """
+
+    singlept = not isinstance(pts[0], np.ndarray)
+    singlederiv = isinstance(derivs[0], int)
+
+    if singlederiv:
+        nderiv, index = _derivative_index(derivs)
+    else:
+        nderiv, indexes = 0, []
+        for deriv in derivs:
+            n, i = _derivative_index(deriv)
+            nderiv = max(n, nderiv)
+            indexes.append(i)
+
+    if singlept:
+        data = func(*pts, nderiv)
+        if singlederiv:
+            return data[index]
+        else:
+            return np.array([data[i] for i in indexes])
+    else:
+        data = [func(*pt, nderiv) for pt in zip(*pts)]
+        if singlederiv:
+            return np.array([d[index] for d in data])
+        else:
+            return np.array([[d[i] for d in data] for i in indexes])
+
+
 class SimpleWrapper:
 
     def __init__(self, lr, w):
@@ -75,14 +133,12 @@ class BasisFunction(SimpleWrapper):
         retval = np.array([self.w.evaluate(up, vp, True, True) for up, vp in zip(u.flat, v.flat)])
         return retval.reshape(u.shape)
 
-    def derivative(self, u, v, d=(1,1)):
-        nderivs = sum(d)
-        index = nderivs * (nderivs + 1) // 2 + d[1]
-        retval = np.array([
-            self.w.evaluate(up, vp, nderivs, True, True)[index]
-            for up, vp in zip(u.flat, v.flat)
-        ])
-        return retval.reshape(u.shape)
+    def derivative(self, *pts, d=(1,1)):
+        if self.nvariate == 2:
+            wrapper = lambda u,v,n: self.w.evaluate(u, v, n, True, True)
+        else:
+            wrapper = lambda u,v,w,n: self.w.evaluate(u, v, w, n, True, True, True )
+        return _derivative_helper(pts, d, wrapper)
 
     def __getitem__(self, idx):
         return self.w.getknots(idx)
@@ -472,15 +528,8 @@ class LRSplineSurface(LRSplineObject):
         return self.w.point(u, v, iEl=iel)
 
     def derivative(self, u, v, d=(1,1), iel=-1):
-        nderivs = sum(d)
-        index = sum(dd + 1 for dd in range(nderivs)) + d[1]
-        if isinstance(u, np.ndarray) and isinstance(v, np.ndarray):
-            retval = []
-            for up, vp in zip(u.flat, v.flat):
-                r = self.w.point(up, vp, nderivs, iEl=iel)
-                retval.append(r[index])
-            return np.array(retval).reshape(u.shape)
-        return self.w.point(u, v, nderivs, iEl=iel)[index]
+        wrapper = lambda u,v,n: self.w.point(u, v, n, iEl=iel)
+        return _derivative_helper((u, v), d, wrapper)
 
     def bezier_extraction(self, iEl):
         return self.w.getBezierExtraction(iEl)
@@ -539,16 +588,7 @@ class LRSplineVolume(LRSplineObject):
         return self.w.getBezierExtraction(iEl)
 
     def derivative(self, u, v, w, d=(1,1,1), iel=-1):
-        nderivs = sum(d)
-        index = nderivs * (nderivs + 1) * (nderivs + 2) // 6
-        tgt = tuple(chain.from_iterable(repeat(i,r) for i,r in enumerate(d)))
-        index += next(i for i,t in enumerate(combinations_with_replacement(range(len(d)), nderivs)) if t == tgt)
-        if isinstance(u, np.ndarray) and isinstance(u, np.ndarray) and isinstance(u, np.ndarray):
-            retval = []
-            for up, vp, wp in zip(u.flat, v.flat, w.flat):
-                r = self.w.point(up, vp, wp, nderivs, iEl=iel)
-                retval.append(r[index])
-            return np.array(retval).reshape(u.shape)
-        return self.w.point(u, v, w, nderivs, iEl=iel)[index]
+        wrapper = lambda u,v,w,n: self.w.point(u, v, w, n, iEl=iel)
+        return _derivative_helper((u, v, w), d, wrapper)
 
     __call__ = evaluate

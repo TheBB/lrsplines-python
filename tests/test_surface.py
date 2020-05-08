@@ -104,6 +104,61 @@ def test_evaluate():
     np.testing.assert_allclose(srf(0.987, 0.555), [0.987, 0.555])
 
 
+def test_derivative():
+    srf = lr.LRSplineSurface(2, 2, 2, 2)
+
+    # Single point, single derivative
+    np.testing.assert_allclose(srf.derivative(0.123, 0.323, d=(0,0)), [0.123, 0.323])
+    np.testing.assert_allclose(srf.derivative(0.123, 0.323, d=(1,0)), [1.0, 0.0])
+    np.testing.assert_allclose(srf.derivative(0.123, 0.323, d=(0,1)), [0.0, 1.0])
+    np.testing.assert_allclose(srf.derivative(0.123, 0.323, d=(1,1)), [0.0, 0.0])
+    np.testing.assert_allclose(srf.basis[0].derivative(0.123, 0.323, d=(0,0)), 0.593729)
+    np.testing.assert_allclose(srf.basis[1].derivative(0.123, 0.323, d=(1,0)), 0.677)
+    np.testing.assert_allclose(srf.basis[2].derivative(0.123, 0.323, d=(0,1)), 0.877)
+    np.testing.assert_allclose(srf.basis[3].derivative(0.123, 0.323, d=(1,1)), 1.0)
+
+    # Multiple points, single derivative
+    pt = (np.array([0.123, 0.821]), np.array([0.323, 0.571]))
+    np.testing.assert_allclose(srf.derivative(*pt, d=(0,0)), [[0.123, 0.323], [0.821, 0.571]])
+    np.testing.assert_allclose(srf.derivative(*pt, d=(1,0)), [[1.0, 0.0], [1.0, 0.0]])
+    np.testing.assert_allclose(srf.derivative(*pt, d=(0,1)), [[0.0, 1.0], [0.0, 1.0]])
+    np.testing.assert_allclose(srf.derivative(*pt, d=(1,1)), [[0.0, 0.0], [0.0, 0.0]])
+    np.testing.assert_allclose(srf.basis[0].derivative(*pt, d=(0,0)), [0.593729, 0.076791])
+    np.testing.assert_allclose(srf.basis[1].derivative(*pt, d=(1,0)), [0.677, 0.429])
+    np.testing.assert_allclose(srf.basis[2].derivative(*pt, d=(0,1)), [0.877, 0.179])
+    np.testing.assert_allclose(srf.basis[3].derivative(*pt, d=(1,1)), [1.0, 1.0])
+
+    # Single point, multiple derivatives
+    np.testing.assert_allclose(
+        srf.derivative(0.123, 0.323, d=[(0,0), (1,0), (0,1), (1,1)]),
+        [[0.123, 0.323], [1.0, 0.0], [0.0, 1.0], [0.0, 0.0]]
+    )
+    np.testing.assert_allclose(
+        srf.basis[3].derivative(0.123, 0.323, d=[(0,0), (1,0), (0,1), (1,1)]),
+        [0.039729, 0.323, 0.123, 1.0]
+    )
+
+    # Multiple points, multiple derivatives
+    np.testing.assert_allclose(
+        srf.derivative(*pt, d=[(0,0), (1,0), (0,1), (1,1)]),
+        [
+            [[0.123, 0.323], [0.821, 0.571]],
+            [[1.0, 0.0], [1.0, 0.0]],
+            [[0.0, 1.0], [0.0, 1.0]],
+            [[0.0, 0.0], [0.0, 0.0]],
+        ]
+    )
+    np.testing.assert_allclose(
+        srf.basis[3].derivative(*pt, d=[(0,0), (1,0), (0,1), (1,1)]),
+        [
+            [0.039729, 0.468791],
+            [0.323, 0.571],
+            [0.123, 0.821],
+            [1.0, 1.0],
+        ]
+    )
+
+
 def test_get_controlpoint():
     srf = lr.LRSplineSurface(3,3,3,3)
     # all controlpoints srf[i] should equal the greville absiccae
