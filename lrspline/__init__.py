@@ -462,7 +462,7 @@ class LRSplineSurface(LRSplineObject):
         if len(args) == 0:
             w = raw.LRSurface()
         elif isinstance(args[0], raw.LRSurface):
-            w = arg
+            w = args[0]
         elif isinstance(args[0], (io.IOBase,str,bytes)):
             w = raw.LRSurface()
             w.read(args[0])
@@ -543,7 +543,7 @@ class LRSplineVolume(LRSplineObject):
         if len(args) == 0:
             w = raw.LRVolume()
         elif isinstance(args[0], raw.LRVolume):
-            w = arg
+            w = args[0]
         elif isinstance(args[0], (io.IOBase,str,bytes)):
             w = raw.LRVolume()
             w.read(args[0])
