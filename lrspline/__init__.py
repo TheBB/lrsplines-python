@@ -539,7 +539,7 @@ class LRSplineSurface(LRSplineObject):
     def evaluate(self, u, v, iel=-1):
         if isinstance(u, np.ndarray) and isinstance(v, np.ndarray):
             retval = np.array([self.w.point(up, vp, iEl=iel) for up, vp in zip(u.flat, v.flat)])
-            return retval.reshape(u.shape)
+            return retval.reshape(list(u.shape) + [self.dimension])
         return self.w.point(u, v, iEl=iel)
 
     def derivative(self, u, v, d=(1,1), iel=-1):
@@ -597,9 +597,9 @@ class LRSplineVolume(LRSplineObject):
         self.w.insert_line(mr.w.copy())
 
     def evaluate(self, u, v, w, iel=-1):
-        if isinstance(u, np.ndarray) and isinstance(u, np.ndarray) and isinstance(u, np.ndarray):
+        if isinstance(u, np.ndarray) and isinstance(v, np.ndarray) and isinstance(w, np.ndarray):
             retval = np.array([self.w.point(up, vp, wp, iEl=iel) for up, vp, wp in zip(u.flat, v.flat, w.flat)])
-            return retval.reshape(u.shape)
+            return retval.reshape(list(u.shape) + [self.dimension])
         return self.w.point(u, v, w, iEl=iel)
 
     def bezier_extraction(self, iEl):

@@ -7,6 +7,14 @@ from lrspline import raw
 path = Path(__file__).parent
 
 @fixture
+def vol3():
+    p = [4,4,4]
+    n = [7,7,7]
+    ans = lr.LRSplineVolume(n[0], n[1], n[2], p[0], p[1], p[2])
+    ans.basis[83].refine()
+    return ans
+
+@fixture
 def vol():
     with open(path / 'mesh02.lr', 'rb') as f:
         return lr.LRSplineVolume(f)
@@ -69,14 +77,23 @@ def test_element_at(vol):
     assert el1 == el2
 
 
-def test_evaluate():
-    # testing identity mapping x(u,v) = u; y(u,v) = v
-    srf = lr.LRSplineVolume(2,2,2,2,2,2)
-    np.testing.assert_allclose(srf(0.123, 0.323, 0.456), [0.123, 0.323, 0.456])
+def test_evaluate(vol3):
+    # testing identity mapping x(u,v,w) = u; y(u,v,w) = v; z(u,v,w) = w
+    np.testing.assert_allclose(vol3(0.123, 0.323, 0.456), [0.123, 0.323, 0.456])
+    np.testing.assert_allclose(vol3(0.123, 0.323, 0.872), [0.123, 0.323, 0.872])
+    np.testing.assert_allclose(vol3(0.987, 0.555, 0.622), [0.987, 0.555, 0.622])
 
-    srf = lr.LRSplineVolume(8,7,6,5,4,3) # n=(8,7,6), p=(5,4,3)
-    np.testing.assert_allclose(srf(0.123, 0.323, 0.872), [0.123, 0.323, 0.872])
-    np.testing.assert_allclose(srf(0.987, 0.555, 0.622), [0.987, 0.555, 0.622])
+    # testing vector evaluation
+    u = np.linspace(0,1,7)
+    v = np.linspace(0,1,7)
+    w = np.linspace(0,1,7)
+    result = vol3(u,v,w)
+    assert result.shape == (7,3)
+
+    # testing meshgrid evaluation
+    U,V,W = np.meshgrid(u,v,w)
+    result = vol3(U,V,W)
+    assert result.shape == (7,7,7,3)
 
 
 def test_derivative():

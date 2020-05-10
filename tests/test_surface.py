@@ -7,6 +7,14 @@ from lrspline import raw
 path = Path(__file__).parent
 
 @fixture
+def srf3():
+    p = [4,4]
+    n = [7,7]
+    ans = lr.LRSplineSurface(n[0], n[1], p[0], p[1])
+    ans.basis[10].refine()
+    return ans
+
+@fixture
 def srf():
     with open(path / 'mesh01.lr', 'rb') as f:
         return lr.LRSplineSurface(f)
@@ -107,14 +115,22 @@ def test_srf_from_file(srf):
     assert len(srf.meshlines) == 130
 
 
-def test_evaluate():
+def test_evaluate(srf3):
     # testing identity mapping x(u,v) = u; y(u,v) = v
-    srf = lr.LRSplineSurface(2,2,2,2)
-    np.testing.assert_allclose(srf(0.123, 0.323), [0.123, 0.323])
+    np.testing.assert_allclose(srf3(0.123, 0.323), [0.123, 0.323])
+    np.testing.assert_allclose(srf3(0.123, 0.323), [0.123, 0.323])
+    np.testing.assert_allclose(srf3(0.987, 0.555), [0.987, 0.555])
 
-    srf = lr.LRSplineSurface(6,5,4,3)
-    np.testing.assert_allclose(srf(0.123, 0.323), [0.123, 0.323])
-    np.testing.assert_allclose(srf(0.987, 0.555), [0.987, 0.555])
+    # testing vector evaluation
+    u = np.linspace(0,1,13)
+    v = np.linspace(0,1,13)
+    result = srf3(u,v)
+    assert result.shape == (13,2)
+
+    # testing meshgrid evaluation
+    U,V = np.meshgrid(u,v)
+    result = srf3(U,V)
+    assert result.shape == (13,13,2)
 
 
 def test_derivative():
