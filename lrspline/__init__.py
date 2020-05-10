@@ -535,6 +535,7 @@ class LRSplineSurface(LRSplineObject):
                 self.w.insert_const_u_edge(k, self.start(1), self.end(1), multiplicity)
             else:
                 self.w.insert_const_v_edge(k, self.start(0), self.end(0), multiplicity)
+        self.w.generateIDs()
 
     def insert(self, *args, direction=None, value=None, start=None, end=None, multiplicity=None):
         if len(args) > 1:
@@ -631,6 +632,7 @@ class LRSplineVolume(LRSplineObject):
             start[direction] = end[direction] = k
             mr = raw.MeshRectangle(start[0], start[1], start[2], end[0], end[1], end[2], multiplicity)
             self.insert(mr)
+        self.w.generateIDs()
 
     def insert(self, mr):
         self.w.insert_line(mr.copy())
