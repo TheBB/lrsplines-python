@@ -140,6 +140,7 @@ cdef extern from 'LRSpline/LRSplineSurface.h' namespace 'LR':
         int nMeshlines() const
         Meshline_* getMeshline(int i)
         void getBezierExtraction(int iEl, vector[double]& extractionMatrix)
+        int getElementContaining(double u, double v)
 
 cdef extern from 'LRSpline/LRSplineVolume.h' namespace 'LR':
     cdef cppclass LRSplineVolume_ 'LR::LRSplineVolume' (LRSpline_):
@@ -162,6 +163,7 @@ cdef extern from 'LRSpline/LRSplineVolume.h' namespace 'LR':
         MeshRectangle_* getMeshRectangle(int i)
         MeshRectangle_* insert_line(MeshRectangle_* newRect)
         void getBezierExtraction(int iEl, vector[double]& extractionMatrix)
+        int getElementContaining(double u, double v, double w)
 
 
 def _is_start(stream):
@@ -591,6 +593,9 @@ cdef class LRSurface(LRSplineObject):
         (<LRSplineSurface_*> self.w).getBezierExtraction(iEl, result)
         return np.reshape(result, (height, width), order='F')
 
+    def getElementContaining(self, double u, double v):
+        return (<LRSplineSurface_*> self.w).getElementContaining(u,v)
+
 
 cdef class LRVolume(LRSplineObject):
 
@@ -717,3 +722,6 @@ cdef class LRVolume(LRSplineObject):
         height = self.w.getElement(iEl).nBasisFunctions()
         (<LRSplineVolume_*> self.w).getBezierExtraction(iEl, result)
         return np.reshape(result, (height, width))
+
+    def getElementContaining(self, double u, double v, double w):
+        return (<LRSplineVolume_*> self.w).getElementContaining(u,v,w)

@@ -188,6 +188,25 @@ def test_equality(srf):
             assert not b == bf
 
 
+def test_get_element_at(srf):
+    for el in srf.elements:
+        midpoint = (np.array(el.start()) + np.array(el.end())) / 2.0
+        el2 = srf.get_element_at(*midpoint)
+        assert el == el2
+
+    el1 = srf.elements[0]
+    el2 = srf.elements[1]
+    assert not el1 == el2
+
+    pt = (np.array(el2.start()) + np.array(el2.end())) / 2.0
+    el2 = srf.get_element_at(*pt)
+    assert not el1 == el2
+
+    pt = (np.array(el1.start()) + np.array(el1.end())) / 2.0
+    el2 = srf.get_element_at(*pt)
+    assert el1 == el2
+
+
 def test_support(srf2):
     # check that all element -> basisfunction pointers are consistent
     for bf in srf2.basis:
