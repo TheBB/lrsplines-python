@@ -164,3 +164,12 @@ def test_get_controlpoint():
     # all controlpoints srf[i] should equal the greville absiccae
     for i,bf in enumerate(srf.basis):
         np.testing.assert_allclose(srf[i], [np.mean(bf[0][1:3]), np.mean(bf[1][1:3])])
+
+
+def test_equality(srf):
+    bf = srf.basis[0]
+    for b in srf.elements[0].support():
+        if b.id == 0:
+            assert b == bf
+        else:
+            assert not b == bf

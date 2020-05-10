@@ -143,6 +143,10 @@ class BasisFunction(SimpleWrapper):
     def __getitem__(self, idx):
         return self.w.getknots(idx)
 
+    def __eq__(self, other):
+        if not isinstance(other, BasisFunction): return False
+        return self.id == other.id
+
     __call__ = evaluate
 
     def refine(self):
@@ -186,6 +190,10 @@ class Element(SimpleWrapper):
     def refine(self):
         self.lr.w.refineElement(self.id)
         self.lr.w.generateIDs()
+
+    def __eq__(self, other):
+        if not isinstance(other, Element): return False
+        return self.id == other.id
 
 
 class MeshInterface(SimpleWrapper):
