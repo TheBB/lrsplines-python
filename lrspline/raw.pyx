@@ -39,6 +39,8 @@ cdef extern from 'LRSpline/Basisfunction.h' namespace 'LR':
         double evaluate(double u, double v, double w, bool u_from_right, bool v_from_right, bool w_from_right) const
         void evaluate(vector[double]& results, double u, double v, double w, int derivs, bool u_from_right, bool v_from_right, bool w_from_right) const
         vector[double]& getknots(int i)
+        vector[Element_*].iterator supportedElementBegin()
+        vector[Element_*].iterator supportedElementEnd()
 
 cdef extern from 'LRSpline/Element.h' namespace 'LR':
     cdef cppclass Element_ 'LR::Element':
@@ -221,6 +223,15 @@ cdef class Basisfunction:
 
     def getknots(self, idx):
         return np.array(self.w.getknots(idx))
+
+    def supportIter(self):
+        cdef vector[Element_*].iterator it = self.w.supportedElementBegin()
+        cdef vector[Element_*].iterator end = self.w.supportedElementEnd()
+        while it != end:
+            el = Element()
+            el.w = deref(it)
+            yield el
+            preinc(it)
 
 
 cdef class Element:

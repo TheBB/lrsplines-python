@@ -11,6 +11,19 @@ def srf():
     with open(path / 'mesh01.lr', 'rb') as f:
         return lr.LRSplineSurface(f)
 
+@fixture
+# quadratic function, random function refined three times
+def srf2():
+    p = np.array([3,3]) # order=3
+    n = p + 7           # 8 elements
+    srf = lr.LRSplineSurface(n[0], n[1], p[0], p[1])
+    srf.basis[34].refine()
+    srf.basis[29].refine()
+    srf.basis[100].refine()
+    with open('ex.eps', 'wb') as f:
+        srf.write_postscript(f)
+    return srf
+
 
 def test_raw_constructors():
     srf = raw.LRSurface()
@@ -173,3 +186,19 @@ def test_equality(srf):
             assert b == bf
         else:
             assert not b == bf
+
+
+def test_support(srf2):
+    # check that all element -> basisfunction pointers are consistent
+    for bf in srf2.basis:
+        for el in bf.support():
+            assert bf in el.support()
+
+    # check that all basisfunction -> element pointers are consistent
+    for el in srf2.elements:
+        for bf in el.support():
+            assert el in bf.support()
+
+    # check that the 'in' call does as intended
+    assert not srf2.basis[0] in srf2.elements[1].support()
+

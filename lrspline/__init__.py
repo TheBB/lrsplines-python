@@ -140,6 +140,10 @@ class BasisFunction(SimpleWrapper):
             wrapper = lambda u,v,w,n: self.w.evaluate(u, v, w, n, True, True, True )
         return _derivative_helper(pts, d, wrapper)
 
+    def support(self):
+        for w in self.w.supportIter():
+            yield Element(self.lr, w)
+
     def __getitem__(self, idx):
         return self.w.getknots(idx)
 
