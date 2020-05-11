@@ -313,13 +313,11 @@ cdef class MeshRectangle:
 
     @property
     def multiplicity_(self):
-        return self.multiplicity_
+        return self.w.multiplicity_
+
 
     def copy(self):
-        cdef MeshRectangle_* copy = self.w.copy()
-        retval = MeshRectangle(*self.start_, *self.stop_, self.multiplicity_)
-        retval.w = copy
-        return retval
+        return MeshRectangle(*self.start_, *self.stop_, self.multiplicity_)
 
 
 cdef class parameterEdge:
