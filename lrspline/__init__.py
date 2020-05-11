@@ -35,9 +35,12 @@ def _check_edge(edge):
 
 
 def _constructor(stream):
-    peek = stream.readline()
-    if not peek:
-        raise raw.EOFError('')
+    if hasattr(stream, 'readline'):
+        peek = stream.readline()
+        if not peek:
+            raise raw.EOFError('')
+    else:
+        peek = stream
     if isinstance(peek, bytes):
         peek = peek.decode('utf-8')
     if peek.startswith('# LRSPLINE SURFACE'):
@@ -338,14 +341,12 @@ class LRSplineObject:
 
     @staticmethod
     def read_many(stream):
-        objects = []
-        while True:
-            try:
-                cls = _constructor(stream)
-                objects.append(cls(stream))
-            except raw.EOFError:
-                break
-        return objects
+        contents = stream.read()
+        splitter = b'# LRSPLINE' if isinstance(contents, bytes) else '# LRSPLINE'
+        contents = contents.split(splitter)[1:]
+        contents = [splitter + c for c in contents]
+        patches = [_constructor(c)(c) for c in contents]
+        return patches
 
     def __len__(self):
         return len(self.basis)

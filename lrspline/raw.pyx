@@ -445,6 +445,7 @@ cdef class LRSplineObject:
     def setMaxAspectRatio(self, double r, bool aposteriori=True):
         self.w.setMaxAspectRatio(r, aposteriori)
 
+
 cdef class LRSurface(LRSplineObject):
 
     def __cinit__(self, n1=None, n2=None, order_u=None, order_v=None, knot1=None, knot2=None, coef=None, dim=2):
