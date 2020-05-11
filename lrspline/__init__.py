@@ -7,7 +7,7 @@ from itertools import combinations_with_replacement, repeat, chain
 from . import raw
 
 
-__version__ = '1.6.0'
+__version__ = '1.7.0'
 
 
 def _ensure_listlike(x, dups=1):
