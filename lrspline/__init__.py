@@ -10,6 +10,18 @@ from . import raw
 __version__ = '1.6.0'
 
 
+def _ensure_listlike(x, dups=1):
+    """Wraps x in a list if it's not list-like."""
+    try:
+        while len(x) < dups:
+            x = list(x)
+            x.append(x[-1])
+        return x
+    except TypeError:
+        return [x] * dups
+    except IndexError:
+        return []
+
 def _check_direction(direction, pardim):
     if direction in {0, 'u', 'U'} and 0 < pardim:
         return 0
@@ -420,11 +432,17 @@ class LRSplineObject:
             return tuple(self.w.order(d) for d in range(self.pardim))
         return self.w.order(_check_direction(direction, self.pardim))
 
-    def knots(self, direction=None):
+    def knots(self, direction=None, with_multiplicities=False):
+        if with_multiplicities:
+            knots = self.w.getGlobalKnotVector()
+        else:
+            knots = self.w.getGlobalUniqueKnotVector()
+
         if direction is None:
-            return self.w.getGlobalUniqueKnotVector()
-        direction = _check_direction(direction, self.pardim)
-        return self.w.getGlobalUniqueKnotVector()[direction]
+            return knots
+        else:
+            direction = _check_direction(direction, self.pardim)
+            return knots[direction]
 
     def refine(self, objects, beta=None):
         if not objects:
@@ -488,7 +506,8 @@ class LRSplineSurface(LRSplineObject):
         elif len(args) == 6: # specify (n1,n2), (p1,p2) and (knot1,knot2)
             w = raw.LRSurface(args[0], args[1], args[2], args[3], args[4], args[5])
         elif len(args) == 7: # specify controlpoints in addition
-            w = raw.LRSurface(args[0], args[1], args[2], args[3], args[4], args[5], args[6])
+            cp = np.array(args[-1])
+            w = raw.LRSurface(args[0], args[1], args[2], args[3], args[4], args[5], cp.flat, len(cp[0]))
         else:
             w = raw.LRSurface()
         super().__init__(w)
@@ -507,6 +526,16 @@ class LRSplineSurface(LRSplineObject):
 
     def write_postscript(self, stream, **kwargs):
         return self.w.writePostscriptElements(stream, **kwargs)
+
+    def insert_knot(self, new_knots, direction, multiplicity=1):
+        new_knots = _ensure_listlike(new_knots)
+        direction = _check_direction(direction, self.pardim)
+        for k in new_knots:
+            if direction == 0:
+                self.w.insert_const_u_edge(k, self.start(1), self.end(1), multiplicity)
+            else:
+                self.w.insert_const_v_edge(k, self.start(0), self.end(0), multiplicity)
+        self.w.generateIDs()
 
     def insert(self, *args, direction=None, value=None, start=None, end=None, multiplicity=None):
         if len(args) > 1:
@@ -539,7 +568,7 @@ class LRSplineSurface(LRSplineObject):
     def evaluate(self, u, v, iel=-1):
         if isinstance(u, np.ndarray) and isinstance(v, np.ndarray):
             retval = np.array([self.w.point(up, vp, iEl=iel) for up, vp in zip(u.flat, v.flat)])
-            return retval.reshape(u.shape)
+            return retval.reshape(u.shape + (-1,))
         return self.w.point(u, v, iEl=iel)
 
     def derivative(self, u, v, d=(1,1), iel=-1):
@@ -572,7 +601,8 @@ class LRSplineVolume(LRSplineObject):
         elif len(args) == 9: # specify n,p and knotvector for 3 directions
             w = raw.LRVolume(*args)
         elif len(args) == 10: # specify all above in addition to controlpoints
-            w = raw.LRVolume(*args)
+            cp = np.array(args[-1])
+            w = raw.LRVolume(*args[:-1], cp.flat, len(cp[0]))
         else:
             w = raw.LRVolume()
         super().__init__(w)
@@ -593,13 +623,24 @@ class LRSplineVolume(LRSplineObject):
     def clone(self):
         return LRSplineVolume(self.w.copy())
 
+    def insert_knot(self, new_knots, direction, multiplicity=1):
+        new_knots = _ensure_listlike(new_knots)
+        direction = _check_direction(direction, self.pardim)
+        for k in new_knots:
+            start = list(self.start())
+            end = list(self.end())
+            start[direction] = end[direction] = k
+            mr = raw.MeshRectangle(start[0], start[1], start[2], end[0], end[1], end[2], multiplicity)
+            self.w.insert_line(mr)
+        self.w.generateIDs()
+
     def insert(self, mr):
         self.w.insert_line(mr.w.copy())
 
     def evaluate(self, u, v, w, iel=-1):
-        if isinstance(u, np.ndarray) and isinstance(u, np.ndarray) and isinstance(u, np.ndarray):
+        if isinstance(u, np.ndarray) and isinstance(v, np.ndarray) and isinstance(w, np.ndarray):
             retval = np.array([self.w.point(up, vp, wp, iEl=iel) for up, vp, wp in zip(u.flat, v.flat, w.flat)])
-            return retval.reshape(u.shape)
+            return retval.reshape(u.shape + (-1,))
         return self.w.point(u, v, w, iEl=iel)
 
     def bezier_extraction(self, iEl):

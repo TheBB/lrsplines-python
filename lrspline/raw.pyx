@@ -62,6 +62,7 @@ cdef extern from 'LRSpline/Meshline.h' namespace 'LR':
 
 cdef extern from 'LRSpline/MeshRectangle.h' namespace 'LR':
     cdef cppclass MeshRectangle_ 'LR::MeshRectangle':
+        MeshRectangle_(double u0, double v0, double w0, double u1, double v1, double w1, int multiplicity) except +
         int constDirection()
         double constParameter()
         vector[double] start_
@@ -293,6 +294,9 @@ cdef class MeshRectangle:
 
     cdef MeshRectangle_* w
 
+    def __cinit__(self, u0, v0, w0, u1, v1, w1, multiplicity=1):
+        self.w = new MeshRectangle_(u0, v0, w0, u1, v1, w1, multiplicity)
+
     def constDirection(self):
         return self.w.constDirection()
 
@@ -309,13 +313,11 @@ cdef class MeshRectangle:
 
     @property
     def multiplicity_(self):
-        return self.multiplicity_
+        return self.w.multiplicity_
+
 
     def copy(self):
-        cdef MeshRectangle_* copy = self.w.copy()
-        retval = MeshRectangle()
-        retval.w = copy
-        return retval
+        return MeshRectangle(*self.start_, *self.stop_, self.multiplicity_)
 
 
 cdef class parameterEdge:
