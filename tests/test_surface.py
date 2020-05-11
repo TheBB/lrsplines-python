@@ -11,6 +11,19 @@ def srf():
     with open(path / 'mesh01.lr', 'rb') as f:
         return lr.LRSplineSurface(f)
 
+@fixture
+# quadratic function, random function refined three times
+def srf2():
+    p = np.array([3,3]) # order=3
+    n = p + 7           # 8 elements
+    srf = lr.LRSplineSurface(n[0], n[1], p[0], p[1])
+    srf.basis[34].refine()
+    srf.basis[29].refine()
+    srf.basis[100].refine()
+    with open('ex.eps', 'wb') as f:
+        srf.write_postscript(f)
+    return srf
+
 
 def test_raw_constructors():
     srf = raw.LRSurface()
@@ -164,3 +177,47 @@ def test_get_controlpoint():
     # all controlpoints srf[i] should equal the greville absiccae
     for i,bf in enumerate(srf.basis):
         np.testing.assert_allclose(srf[i], [np.mean(bf[0][1:3]), np.mean(bf[1][1:3])])
+
+
+def test_equality(srf):
+    bf = srf.basis[0]
+    for b in srf.elements[0].support():
+        if b.id == 0:
+            assert b == bf
+        else:
+            assert not b == bf
+
+
+def test_element_at(srf):
+    for el in srf.elements:
+        midpoint = (np.array(el.start()) + np.array(el.end())) / 2.0
+        el2 = srf.element_at(*midpoint)
+        assert el == el2
+
+    el1 = srf.elements[0]
+    el2 = srf.elements[1]
+    assert not el1 == el2
+
+    pt = (np.array(el2.start()) + np.array(el2.end())) / 2.0
+    el2 = srf.element_at(*pt)
+    assert not el1 == el2
+
+    pt = (np.array(el1.start()) + np.array(el1.end())) / 2.0
+    el2 = srf.element_at(*pt)
+    assert el1 == el2
+
+
+def test_support(srf2):
+    # check that all element -> basisfunction pointers are consistent
+    for bf in srf2.basis:
+        for el in bf.support():
+            assert bf in el.support()
+
+    # check that all basisfunction -> element pointers are consistent
+    for el in srf2.elements:
+        for bf in el.support():
+            assert el in bf.support()
+
+    # check that the 'in' call does as intended
+    assert not srf2.basis[0] in srf2.elements[1].support()
+

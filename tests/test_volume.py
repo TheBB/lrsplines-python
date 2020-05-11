@@ -50,6 +50,25 @@ def test_vol_from_file(vol):
     assert len(vol.meshrects) == 189
 
 
+def test_element_at(vol):
+    for el in vol.elements:
+        midpoint = (np.array(el.start()) + np.array(el.end())) / 2.0
+        el2 = vol.element_at(*midpoint)
+        assert el == el2
+
+    el1 = vol.elements[0]
+    el2 = vol.elements[1]
+    assert not el1 == el2
+
+    pt = (np.array(el2.start()) + np.array(el2.end())) / 2.0
+    el2 = vol.element_at(*pt)
+    assert not el1 == el2
+
+    pt = (np.array(el1.start()) + np.array(el1.end())) / 2.0
+    el2 = vol.element_at(*pt)
+    assert el1 == el2
+
+
 def test_evaluate():
     # testing identity mapping x(u,v) = u; y(u,v) = v
     srf = lr.LRSplineVolume(2,2,2,2,2,2)

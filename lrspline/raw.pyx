@@ -39,6 +39,8 @@ cdef extern from 'LRSpline/Basisfunction.h' namespace 'LR':
         double evaluate(double u, double v, double w, bool u_from_right, bool v_from_right, bool w_from_right) const
         void evaluate(vector[double]& results, double u, double v, double w, int derivs, bool u_from_right, bool v_from_right, bool w_from_right) const
         vector[double]& getknots(int i)
+        vector[Element_*].iterator supportedElementBegin()
+        vector[Element_*].iterator supportedElementEnd()
 
 cdef extern from 'LRSpline/Element.h' namespace 'LR':
     cdef cppclass Element_ 'LR::Element':
@@ -138,6 +140,7 @@ cdef extern from 'LRSpline/LRSplineSurface.h' namespace 'LR':
         int nMeshlines() const
         Meshline_* getMeshline(int i)
         void getBezierExtraction(int iEl, vector[double]& extractionMatrix)
+        int getElementContaining(double u, double v)
 
 cdef extern from 'LRSpline/LRSplineVolume.h' namespace 'LR':
     cdef cppclass LRSplineVolume_ 'LR::LRSplineVolume' (LRSpline_):
@@ -160,6 +163,7 @@ cdef extern from 'LRSpline/LRSplineVolume.h' namespace 'LR':
         MeshRectangle_* getMeshRectangle(int i)
         MeshRectangle_* insert_line(MeshRectangle_* newRect)
         void getBezierExtraction(int iEl, vector[double]& extractionMatrix)
+        int getElementContaining(double u, double v, double w)
 
 
 def _is_start(stream):
@@ -221,6 +225,15 @@ cdef class Basisfunction:
 
     def getknots(self, idx):
         return np.array(self.w.getknots(idx))
+
+    def supportIter(self):
+        cdef vector[Element_*].iterator it = self.w.supportedElementBegin()
+        cdef vector[Element_*].iterator end = self.w.supportedElementEnd()
+        while it != end:
+            el = Element()
+            el.w = deref(it)
+            yield el
+            preinc(it)
 
 
 cdef class Element:
@@ -581,6 +594,9 @@ cdef class LRSurface(LRSplineObject):
         (<LRSplineSurface_*> self.w).getBezierExtraction(iEl, result)
         return np.reshape(result, (height, width), order='F')
 
+    def getElementContaining(self, double u, double v):
+        return (<LRSplineSurface_*> self.w).getElementContaining(u,v)
+
 
 cdef class LRVolume(LRSplineObject):
 
@@ -707,3 +723,6 @@ cdef class LRVolume(LRSplineObject):
         height = self.w.getElement(iEl).nBasisFunctions()
         (<LRSplineVolume_*> self.w).getBezierExtraction(iEl, result)
         return np.reshape(result, (height, width))
+
+    def getElementContaining(self, double u, double v, double w):
+        return (<LRSplineVolume_*> self.w).getElementContaining(u,v,w)

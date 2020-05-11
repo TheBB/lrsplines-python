@@ -143,8 +143,17 @@ class BasisFunction(SimpleWrapper):
             wrapper = lambda u,v,w,n: self.w.evaluate(u, v, w, n, True, True, True )
         return _derivative_helper(pts, d, wrapper)
 
+    def support(self):
+        for w in self.w.supportIter():
+            yield Element(self.lr, w)
+
     def __getitem__(self, idx):
         return self.w.getknots(idx)
+
+    def __eq__(self, other):
+        if not isinstance(other, BasisFunction):
+            return False
+        return self.id == other.id
 
     __call__ = evaluate
 
@@ -189,6 +198,11 @@ class Element(SimpleWrapper):
     def refine(self):
         self.lr.w.refineElement(self.id)
         self.lr.w.generateIDs()
+
+    def __eq__(self, other):
+        if not isinstance(other, Element):
+            return False
+        return self.id == other.id
 
 
 class MeshInterface(SimpleWrapper):
@@ -535,6 +549,9 @@ class LRSplineSurface(LRSplineObject):
     def bezier_extraction(self, iEl):
         return self.w.getBezierExtraction(iEl)
 
+    def element_at(self, u, v):
+        return self.elements[self.w.getElementContaining(u,v)]
+
     __call__ = evaluate
 
 
@@ -587,6 +604,9 @@ class LRSplineVolume(LRSplineObject):
 
     def bezier_extraction(self, iEl):
         return self.w.getBezierExtraction(iEl)
+
+    def element_at(self, u, v, w):
+        return self.elements[self.w.getElementContaining(u,v,w)]
 
     def derivative(self, u, v, w, d=(1,1,1), iel=-1):
         wrapper = lambda u,v,w,n: self.w.point(u, v, w, n, iEl=iel)
