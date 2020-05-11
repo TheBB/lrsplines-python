@@ -631,11 +631,11 @@ class LRSplineVolume(LRSplineObject):
             end = list(self.end())
             start[direction] = end[direction] = k
             mr = raw.MeshRectangle(start[0], start[1], start[2], end[0], end[1], end[2], multiplicity)
-            self.insert(mr)
+            self.w.insert_line(mr)
         self.w.generateIDs()
 
     def insert(self, mr):
-        self.w.insert_line(mr.copy())
+        self.w.insert_line(mr.w.copy())
 
     def evaluate(self, u, v, w, iel=-1):
         if isinstance(u, np.ndarray) and isinstance(v, np.ndarray) and isinstance(w, np.ndarray):
