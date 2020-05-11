@@ -546,7 +546,7 @@ class LRSplineSurface(LRSplineObject):
     def bezier_extraction(self, iEl):
         return self.w.getBezierExtraction(iEl)
 
-    def get_element_at(self, u, v):
+    def element_at(self, u, v):
         return self.elements[self.w.getElementContaining(u,v)]
 
     __call__ = evaluate
@@ -602,7 +602,7 @@ class LRSplineVolume(LRSplineObject):
     def bezier_extraction(self, iEl):
         return self.w.getBezierExtraction(iEl)
 
-    def get_element_at(self, u, v, w):
+    def element_at(self, u, v, w):
         return self.elements[self.w.getElementContaining(u,v,w)]
 
     def derivative(self, u, v, w, d=(1,1,1), iel=-1):
