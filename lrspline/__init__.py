@@ -211,6 +211,9 @@ class Element(SimpleWrapper):
         self.lr.w.refineElement(self.id)
         self.lr.w.generateIDs()
 
+    def bezier_extraction(self):
+        return self.lr.bezier_extraction(self.id)
+
     def __eq__(self, other):
         if not isinstance(other, Element):
             return False
@@ -481,6 +484,12 @@ class LRSplineObject:
     def cache_elements(self):
         self.w.createElementCache()
 
+    def bezier_extraction(self, arg):
+        if isinstance(arg,Element):
+            return self.w.getBezierExtraction(arg.id)
+        else: # isinstance(arg,int)
+            return self.w.getBezierExtraction(arg)
+
     def __mul__(self, x):
         new = self.clone()
         new.controlpoints *= x
@@ -579,9 +588,6 @@ class LRSplineSurface(LRSplineObject):
         wrapper = lambda u,v,n: self.w.point(u, v, n, iEl=iel)
         return _derivative_helper((u, v), d, wrapper)
 
-    def bezier_extraction(self, iEl):
-        return self.w.getBezierExtraction(iEl)
-
     def element_at(self, u, v):
         return self.elements[self.w.getElementContaining(u,v)]
 
@@ -646,9 +652,6 @@ class LRSplineVolume(LRSplineObject):
             retval = np.array([self.w.point(up, vp, wp, iEl=iel) for up, vp, wp in zip(u.flat, v.flat, w.flat)])
             return retval.reshape(u.shape + (-1,))
         return self.w.point(u, v, w, iEl=iel)
-
-    def bezier_extraction(self, iEl):
-        return self.w.getBezierExtraction(iEl)
 
     def element_at(self, u, v, w):
         return self.elements[self.w.getElementContaining(u,v,w)]
