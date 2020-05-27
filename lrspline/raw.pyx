@@ -294,8 +294,8 @@ cdef class MeshRectangle:
 
     cdef MeshRectangle_* w
 
-    def __cinit__(self, u0, v0, w0, u1, v1, w1, multiplicity=1):
-        self.w = new MeshRectangle_(u0, v0, w0, u1, v1, w1, multiplicity)
+    # def __cinit__(self, u0, v0, w0, u1, v1, w1, multiplicity=1):
+    #     self.w = new MeshRectangle_(u0, v0, w0, u1, v1, w1, multiplicity)
 
     def constDirection(self):
         return self.w.constDirection()
@@ -315,9 +315,13 @@ cdef class MeshRectangle:
     def multiplicity_(self):
         return self.w.multiplicity_
 
-
     def copy(self):
-        return MeshRectangle(*self.start_, *self.stop_, self.multiplicity_)
+        retval = MeshRectangle()
+        retval.w = self.w.copy()
+        return retval
+
+    # def copy(self):
+    #     return MeshRectangle(*self.start_, *self.stop_, self.multiplicity_)
 
 
 cdef class parameterEdge:

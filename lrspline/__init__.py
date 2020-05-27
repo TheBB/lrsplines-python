@@ -76,6 +76,12 @@ def _derivative_index(d):
     return nderivs, index
 
 
+def _evaluate_helper(pts, func):
+    if not isinstance(pts[0], np.ndarray):
+        return func(*pts)
+    return np.array([func(*pt) for pt in zip(*pts)])
+
+
 def _derivative_helper(pts, derivs, func):
     """Helper for calculating derivatives.
 
@@ -144,9 +150,19 @@ class BasisFunction(SimpleWrapper):
     def nvariate(self):
         return self.w.nVariate()
 
-    def evaluate(self, u, v):
-        retval = np.array([self.w.evaluate(up, vp, True, True) for up, vp in zip(u.flat, v.flat)])
-        return retval.reshape(u.shape)
+    def evaluate(self, *args):
+        return self.w.evaluate(*args, True, True, True)
+
+        # if len(args) == 2:
+        #     wrapper = lambda u,v: self.w.evaluate(u, v, True, True)
+        # else:
+        #     wrapper = lambda u,v,w: self.w.evaluate(u, v, w, True, True, True)
+        # return _evaluate_helper(args, wrapper)
+
+        #     retval = np.array([self.w.evaluate(up, vp, True, True) for up, vp in zip(*args)])
+        # else:
+        #     retval = np.array([self.w.evaluate(up, vp, wp, True, True, True) for up, vp, wp in zip(*args)])
+        # return retval.reshape(u.shape)
 
     def derivative(self, *pts, d=(1,1)):
         if self.nvariate == 2:
@@ -300,7 +316,6 @@ class MeshRect(MeshInterface):
             return tuple(zip(start, end))
         direction = _check_direction(direction, self.lr.pardim)
         return start[direction], end[direction]
-
 
 
 class ListLikeView:
