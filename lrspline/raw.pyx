@@ -293,9 +293,27 @@ cdef class Meshline:
 cdef class MeshRectangle:
 
     cdef MeshRectangle_* w
+    cdef bool owned
 
-    def __cinit__(self, u0, v0, w0, u1, v1, w1, multiplicity=1):
-        self.w = new MeshRectangle_(u0, v0, w0, u1, v1, w1, multiplicity)
+    def __cinit__(self, *args):
+        if len(args) >= 6:
+            multiplicity = 1 if len(args) < 7 else args[6]
+            self.w = new MeshRectangle_(args[0], args[1], args[2], args[3], args[4], args[5], multiplicity)
+            self.owned = True
+        else:
+            assert len(args) == 0
+            self.w = NULL
+            self.owned = False
+
+    cdef set_wrappee(self, MeshRectangle_* w, bool owned):
+        if self.owned:
+            del self.w
+        self.w = w
+        self.owned = owned
+
+    def __dealloc__(self):
+        if self.owned:
+            del self.w
 
     def constDirection(self):
         return self.w.constDirection()
@@ -314,7 +332,6 @@ cdef class MeshRectangle:
     @property
     def multiplicity_(self):
         return self.w.multiplicity_
-
 
     def copy(self):
         return MeshRectangle(*self.start_, *self.stop_, self.multiplicity_)
@@ -697,7 +714,7 @@ cdef class LRVolume(LRSplineObject):
         cdef vector[MeshRectangle_*].iterator end = (<LRSplineVolume_*> self.w).meshrectEnd()
         while it != end:
             mr = MeshRectangle()
-            mr.w = deref(it)
+            mr.set_wrappee(deref(it), False)
             yield mr
             preinc(it)
 
@@ -706,11 +723,11 @@ cdef class LRVolume(LRSplineObject):
 
     def getMeshRectangle(self, i):
         mr = MeshRectangle()
-        mr.w = (<LRSplineVolume_*> self.w).getMeshRectangle(i)
+        mr.set_wrappee((<LRSplineVolume_*> self.w).getMeshRectangle(i), False)
         return mr
 
     def insert_line(self, mr: MeshRectangle):
-        (<LRSplineVolume_*> self.w).insert_line(mr.w)
+        (<LRSplineVolume_*> self.w).insert_line(mr.w.copy())
 
     def getGlobalUniqueKnotVector(self):
         cdef vector[double] ktsu

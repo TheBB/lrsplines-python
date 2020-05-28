@@ -635,7 +635,7 @@ class LRSplineVolume(LRSplineObject):
         self.w.generateIDs()
 
     def insert(self, mr):
-        self.w.insert_line(mr.w.copy())
+        self.w.insert_line(mr.w)
 
     def evaluate(self, u, v, w, iel=-1):
         if isinstance(u, np.ndarray) and isinstance(v, np.ndarray) and isinstance(w, np.ndarray):
