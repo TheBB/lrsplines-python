@@ -6,6 +6,7 @@ from setuptools.command.build_ext import build_ext
 from distutils.extension import Extension
 from subprocess import run
 from os import path, makedirs
+import sys
 
 
 # Path of .pyx files, without extension
@@ -29,7 +30,11 @@ else:
 # If we're not using Cython, the cythonized sources must be in the
 # file tree.  This is taken care of by sdist (see MANIFEST.in)
 if not HAS_CYTHON:
-    assert all(path.exists(fn + '.cpp') for fn in EXTENSION_FILES)
+    try:
+        assert all(path.exists(fn + '.cpp') for fn in EXTENSION_FILES)
+    except AssertionError:
+        print("Could not find either cython or cythonized source files.", file=sys.stderr)
+        raise
 
 
 # Specify the C++ library files that must also be included
