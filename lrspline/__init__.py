@@ -359,19 +359,20 @@ class MeshRectView(ListLikeView):
 
 class LRSplineObject:
 
-    def __init__(self, w):
-        w.generateIDs()
+    def __init__(self, w, renumber=True):
+        if renumber:
+            w.generateIDs()
         self.w = w
         self.elements = ElementView(self)
         self.basis = BasisView(self)
 
     @staticmethod
-    def read_many(stream):
+    def read_many(stream, renumber=True):
         contents = stream.read()
         splitter = b'# LRSPLINE' if isinstance(contents, bytes) else '# LRSPLINE'
         contents = contents.split(splitter)[1:]
         contents = [splitter + c for c in contents]
-        patches = [_constructor(c)(c) for c in contents]
+        patches = [_constructor(c)(c, renumber=renumber) for c in contents]
         return patches
 
     def __len__(self):
@@ -477,6 +478,9 @@ class LRSplineObject:
     def generate_ids(self):
         self.w.generateIDs()
 
+    def cache_elements(self):
+        self.w.createElementCache()
+
     def __mul__(self, x):
         new = self.clone()
         new.controlpoints *= x
@@ -491,7 +495,7 @@ class LRSplineObject:
 
 class LRSplineSurface(LRSplineObject):
 
-    def __init__(self, *args):
+    def __init__(self, *args, renumber=True):
         if len(args) == 0:
             w = raw.LRSurface()
         elif isinstance(args[0], raw.LRSurface):
@@ -510,7 +514,7 @@ class LRSplineSurface(LRSplineObject):
             w = raw.LRSurface(args[0], args[1], args[2], args[3], args[4], args[5], cp.flat, len(cp[0]))
         else:
             w = raw.LRSurface()
-        super().__init__(w)
+        super().__init__(w, renumber=renumber)
         self.meshlines = MeshLineView(self)
 
     def corners(self):
@@ -586,7 +590,7 @@ class LRSplineSurface(LRSplineObject):
 
 class LRSplineVolume(LRSplineObject):
 
-    def __init__(self, *args):
+    def __init__(self, *args, renumber=True):
         if len(args) == 0:
             w = raw.LRVolume()
         elif isinstance(args[0], raw.LRVolume):
@@ -605,7 +609,7 @@ class LRSplineVolume(LRSplineObject):
             w = raw.LRVolume(*args[:-1], cp.flat, len(cp[0]))
         else:
             w = raw.LRVolume()
-        super().__init__(w)
+        super().__init__(w, renumber=renumber)
         self.meshrects = MeshRectView(self)
 
     def corners(self):
