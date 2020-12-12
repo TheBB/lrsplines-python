@@ -105,4 +105,3 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.pypi_pwd }}
-          repository_url: https://test.pypi.org/legacy/
