@@ -76,7 +76,7 @@ with open(Path(__file__).parent / 'README.rst') as f:
 
 setup(
     name='LRSplines',
-    version='1.9.1',
+    version='1.9.2',
     description='Python bindings for the LRSplines library',
     long_description_content_type='text/x-rst',
     long_description=desc,
