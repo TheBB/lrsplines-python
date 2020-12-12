@@ -5,8 +5,8 @@ LRSplines
 .. image:: https://badge.fury.io/py/LRSplines.svg
    :target: https://badge.fury.io/py/LRSplines
 
-.. image:: https://travis-ci.org/TheBB/lrsplines-python.svg?branch=master
-   :target: https://travis-ci.org/TheBB/lrsplines-python
+.. image:: https://github.com/TheBB/lrsplines-python/workflows/Python%20package/badge.svg?branch=master
+   :target: https://github.com/TheBB/lrsplines-python/actions?query=workflow%3A%22Python+package%22+branch%3Amaster
 
 
 This is a cython-based Python wrapper around the `LRSplines
