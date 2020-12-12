@@ -1,13 +1,18 @@
+from abc import abstractmethod
 from functools import partial
 import operator as op
 import io
 import numpy as np
 from itertools import combinations_with_replacement, repeat, chain
 
+from typing import Tuple, Optional, Union, TypeVar
+
 from . import raw
 
 
 __version__ = '1.8.0'
+
+T = TypeVar('T')
 
 
 def _ensure_listlike(x, dups=1):
@@ -95,10 +100,21 @@ def _derivative_helper(pts, derivs, func):
     """
 
     singlept = not isinstance(pts[0], np.ndarray)
-    singlederiv = isinstance(derivs[0], int)
 
-    if singlederiv:
+    # If requesting a single derivative
+    if isinstance(derivs[0], int):
         nderiv, index = _derivative_index(derivs)
+        
+        # If requesting a single point
+        if singlept:
+            return func(*pts, nderiv)[index]
+        
+        # If requesting multiple points
+        else:
+            data = [func(*pt, nderiv) for pt in zip(*pts)]
+            return np.array([d[index] for d in data])
+        
+    # If requesting several derivatives
     else:
         nderiv, indexes = 0, []
         for deriv in derivs:
@@ -106,17 +122,14 @@ def _derivative_helper(pts, derivs, func):
             nderiv = max(n, nderiv)
             indexes.append(i)
 
-    if singlept:
-        data = func(*pts, nderiv)
-        if singlederiv:
-            return data[index]
-        else:
+        # If requesting a single point
+        if singlept:
+            data = func(*pts, nderiv)
             return np.array([data[i] for i in indexes])
-    else:
-        data = [func(*pt, nderiv) for pt in zip(*pts)]
-        if singlederiv:
-            return np.array([d[index] for d in data])
+        
+        # If requesting multiple points
         else:
+            data = [func(*pt, nderiv) for pt in zip(*pts)]
             return np.array([[d[i] for d in data] for i in indexes])
 
 
@@ -221,6 +234,14 @@ class Element(SimpleWrapper):
 
 
 class MeshInterface(SimpleWrapper):
+    
+    constant_direction: int
+    value: float
+    variable_directions: Tuple[int, ...]
+    
+    @abstractmethod
+    def span(self, direction: Optional[Union[int, str]] = None) -> Tuple[float, float]:
+        pass
 
     def __str__(self):
         cls = self.__class__.__name__
@@ -361,6 +382,10 @@ class MeshRectView(ListLikeView):
 
 
 class LRSplineObject:
+    
+    @abstractmethod
+    def clone(self: T) -> T:
+        pass
 
     def __init__(self, w, renumber=True):
         if renumber:
