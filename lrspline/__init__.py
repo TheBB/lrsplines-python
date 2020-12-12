@@ -10,7 +10,7 @@ from typing import Tuple, Optional, Union, TypeVar
 from . import raw
 
 
-__version__ = '1.9.2'
+__version__ = '1.9.3'
 
 T = TypeVar('T')
 
