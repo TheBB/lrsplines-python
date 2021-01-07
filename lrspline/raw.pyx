@@ -489,7 +489,7 @@ cdef class LRSurface(LRSplineObject):
             knot2_arr = array.array('d', knot2)
             coef_arr  = array.array('d', coef)
             self.w = new LRSplineSurface_(n1, n2, order_u, order_v, knot1_arr.data.as_doubles, knot2_arr.data.as_doubles, coef_arr.data.as_doubles, dim)
-        if knot1 is not None and knot2 is not None:
+        elif knot1 is not None and knot2 is not None:
             knot1_arr = array.array('d', knot1)
             knot2_arr = array.array('d', knot2)
             self.w = new LRSplineSurface_(n1, n2, order_u, order_v, knot1_arr.data.as_doubles, knot2_arr.data.as_doubles)
