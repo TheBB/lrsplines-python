@@ -25,13 +25,13 @@ def set_max_meshsize(myspline, amount):
     did_refinement = True
     while did_refinement:
         did_refinement = False
-        functions_to_refine = []
+        functions_to_refine = set()
         for el in myspline.elements:
             print(el)
             u0 = np.array(el.start())
             u1 = np.array(el.end())
             u = (u0+u1)/2
-            x = myspline(*u)
+            x = myspline(*u, iel=el.id)
             r = np.linalg.norm(u)
             if len(x) == 2: x = np.append(x,0)
             if len(u) == 2: u = np.append(u,0)
@@ -48,12 +48,10 @@ def set_max_meshsize(myspline, amount):
             if h > h_target(*x, r, *u):
                 did_refinement = True
                 for function in el.support():
-                    # since one function might have support on mulitple elements
-                    # this list might contain repetitions
-                    functions_to_refine.append(function)
+                    functions_to_refine.add(function.id)
 
-            # make the unique list of functions to refine
-            functions_to_refine = [f for f in myspline.basis if f in functions_to_refine]
+        # make a list of the basisfunction objects tagged for refinement
+        functions_to_refine = [f for f in myspline.basis if f.id in functions_to_refine]
 
         if did_refinement:
             print('Trying to refine the following functions')
@@ -63,8 +61,8 @@ def set_max_meshsize(myspline, amount):
 
 
 ### USER DEFINED REFINEMENT FUNCTION
-def ref(x):
-    return x + 0.100
+def ref(u):
+    return u + 0.025
 
 
 # read model from file
