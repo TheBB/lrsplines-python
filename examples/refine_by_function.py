@@ -41,7 +41,18 @@ def set_max_meshsize(myspline, amount):
             # look up the target mesh size for this element as measured in either
             # geometric coordinates (x,y,z) or parametric (u,v,w)
             if use_physical_meshsize:
-                h = np.linalg.norm(myspline(*u1) - myspline(*u0))
+                if myspline.pardim == 2:
+                    # pick the largest diagonal
+                    h0 = np.linalg.norm(myspline(*u1) - myspline(*u0))
+                    h1 = np.linalg.norm(myspline(u0[0], u1[1]) - myspline(u1[0], u0[1]))
+                    h = max(h0,h1)
+                else:
+                    # pick the largest diagonal
+                    h0 = np.linalg.norm(myspline(u0[0], u0[1], u0[2]) - myspline(u1[0], u1[1], u1[2]))
+                    h1 = np.linalg.norm(myspline(u1[0], u0[1], u0[2]) - myspline(u0[0], u1[1], u1[2]))
+                    h2 = np.linalg.norm(myspline(u0[0], u1[1], u0[2]) - myspline(u1[0], u0[1], u1[2]))
+                    h3 = np.linalg.norm(myspline(u0[0], u0[1], u1[2]) - myspline(u1[0], u1[1], u0[2]))
+                    h = np.max([h0,h1,h2,h3])
             else:
                 h = np.max(u1-u0)
 
