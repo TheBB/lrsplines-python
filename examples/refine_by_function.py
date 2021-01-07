@@ -38,7 +38,7 @@ def set_max_meshsize(myspline, amount):
             # look up the target mesh size for this element as measured in either
             # geometric coordinates (x,y,z) or parametric (u,v,w)
             if use_physical_meshsize:
-                h = np.linalg.norm(myspline(u1) - myspline(u0))
+                h = np.linalg.norm(myspline(*u1) - myspline(*u0))
             else:
                 h = np.max(u1-u0)
 
@@ -63,8 +63,8 @@ def set_max_meshsize(myspline, amount):
 
 
 ### USER DEFINED REFINEMENT FUNCTION
-def ref(u,v):
-    return np.abs(u-0.5-.5*np.sin(v*2*np.pi))+0.025
+def ref(x):
+    return x + 0.100
 
 
 # read model from file
