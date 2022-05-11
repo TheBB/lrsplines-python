@@ -616,6 +616,9 @@ class LRSplineSurface(LRSplineObject):
     def element_at(self, u, v):
         return self.elements[self.w.getElementContaining(u,v)]
 
+    def make_integer_knots(self):
+        return self.w.makeIntegerKnots()
+
     __call__ = evaluate
 
 

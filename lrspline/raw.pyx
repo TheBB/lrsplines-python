@@ -142,6 +142,7 @@ cdef extern from 'LRSpline/LRSplineSurface.h' namespace 'LR':
         Meshline_* getMeshline(int i)
         void getBezierExtraction(int iEl, vector[double]& extractionMatrix)
         int getElementContaining(double u, double v)
+        double makeIntegerKnots()
 
 cdef extern from 'LRSpline/LRSplineVolume.h' namespace 'LR':
     cdef cppclass LRSplineVolume_ 'LR::LRSplineVolume' (LRSpline_):
@@ -615,6 +616,9 @@ cdef class LRSurface(LRSplineObject):
 
     def getElementContaining(self, double u, double v):
         return (<LRSplineSurface_*> self.w).getElementContaining(u,v)
+
+    def makeIntegerKnots(self):
+        return (<LRSplineSurface_*> self.w).makeIntegerKnots()
 
 
 cdef class LRVolume(LRSplineObject):

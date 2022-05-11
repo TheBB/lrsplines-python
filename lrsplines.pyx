@@ -108,6 +108,7 @@ cdef extern from 'LRSpline/LRSplineSurface.h' namespace 'LR':
         void writePostscriptElements(ostream, int, int, bool, vector[int]*) const
         void writePostscriptMesh(ostream, bool, vector[int]*) const
         void writePostscriptMeshWithControlPoints(ostream, int, int) const
+        double makeIntegerKnots()
 
 
 cdef class BasisFunction:
