@@ -1,2 +1,2 @@
-Cython==0.29.21
-pytest==6.1.2
+Cython==0.29.28
+pytest==7.1.1
