@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import lrspline as lr
 from lrspline import raw
+from splipy import BSplineBasis
 
 path = Path(__file__).parent
 
@@ -57,6 +58,30 @@ def test_vol_from_file(vol):
     assert len(list(vol.elements.edge('south'))) == 70
     assert len(vol.meshrects) == 189
 
+def test_bezier_evaluation(vol):
+  b1 = BSplineBasis(vol.order(0))
+  b2 = BSplineBasis(vol.order(1))
+  b3 = BSplineBasis(vol.order(2))
+  nviz = 4
+  # takes forever to test all elements, so to speed production, we only test the 11 first ones
+  # for el in vol.elements:
+  for el in [vol.elements[i] for i in range(11)]:
+    B = el.bezier_extraction()
+    cp = np.array([func.controlpoint for func in el.support()])
+    u0 = np.array(el.start())
+    u1 = np.array(el.end())
+    de = u1-u0
+    for u in np.linspace(0,1,nviz):
+      for v in np.linspace(0,1,nviz):
+        for w in np.linspace(0,1,nviz):
+          bez = np.kron(b3(w), np.kron(b2(v), b1(u)))
+          xi = u0 + de*np.array([u,v,w])
+          val = bez @ B.T @ cp
+
+          bezier_eval = np.ndarray.flatten(np.array(val))
+          direct_eval = vol(*xi)
+
+          np.testing.assert_allclose(direct_eval, bezier_eval)
 
 def test_element_at(vol):
     for el in vol.elements:

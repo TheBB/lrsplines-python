@@ -745,7 +745,7 @@ cdef class LRVolume(LRSplineObject):
         width  = self.w.order(0) * self.w.order(1) * self.w.order(2)
         height = self.w.getElement(iEl).nBasisFunctions()
         (<LRSplineVolume_*> self.w).getBezierExtraction(iEl, result)
-        return np.reshape(result, (height, width))
+        return np.reshape(result, (height, width), order='F')
 
     def getElementContaining(self, double u, double v, double w):
         return (<LRSplineVolume_*> self.w).getElementContaining(u,v,w)

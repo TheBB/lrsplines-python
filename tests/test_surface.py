@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import lrspline as lr
 from lrspline import raw
+from splipy import BSplineBasis
 
 path = Path(__file__).parent
 
@@ -105,6 +106,29 @@ def test_bezier_extraction():
             assert np.sum(C[i]) == 1
             assert np.max(C[i]) == 1
             assert np.count_nonzero(C[i]) == 1
+
+def test_bezier_evaluation(srf):
+  b1 = BSplineBasis(srf.order(0))
+  b2 = BSplineBasis(srf.order(1))
+  nviz = 4
+  # takes forever to test all elements, so to speed production, we only test the 11 first ones
+  # for el in srf.elements:
+  for el in [srf.elements[i] for i in range(11)]:
+    B = el.bezier_extraction()
+    cp = np.array([func.controlpoint for func in el.support()])
+    u0 = np.array(el.start())
+    u1 = np.array(el.end())
+    de = u1-u0
+    for u in np.linspace(0,1,nviz):
+      for v in np.linspace(0,1,nviz):
+        bez = np.kron(b2(v), b1(u))
+        xi = u0 + de*np.array([u,v])
+        val = bez @ B.T @ cp
+
+        bezier_eval = np.ndarray.flatten(np.array(val))
+        direct_eval = srf(*xi)
+
+        np.testing.assert_allclose(direct_eval, bezier_eval)
 
 def test_srf_from_file(srf):
     np.testing.assert_allclose(srf(0.0, 0.0), [0.0, 0.0])
