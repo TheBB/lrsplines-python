@@ -68,6 +68,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           path: ./wheelhouse/*.whl
+          name: wheels-${{ matrix.os }}
 
   build_sdist:
     name: Build sdist
@@ -91,6 +92,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           path: dist/*.tar.gz
+          name: sdist
 
   deploy:
     name: Deploy
@@ -100,8 +102,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: artifact
           path: dist
+          merge-multiple: true
       - uses: pypa/gh-action-pypi-publish@v1.4.1
         with:
           user: __token__
@@ -113,10 +115,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: artifact
           path: dist
+          merge-multiple: true
       - uses: pypa/gh-action-pypi-publish@v1.4.1
         with:
           user: __token__
