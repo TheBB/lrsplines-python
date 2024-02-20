@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 from pathlib import Path
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext
-from distutils.extension import Extension
 from subprocess import run
 from os import path, makedirs
 import sys
