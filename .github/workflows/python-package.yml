@@ -73,7 +73,7 @@ jobs:
     name: Build sdist
     needs: [test]
     runs-on: ubuntu-latest
-    if: github.event_name == 'create' && startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'create' && startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v2
         with:
@@ -81,7 +81,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.0'
+          python-version: '3.9'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -96,7 +96,7 @@ jobs:
     name: Deploy
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
-    if: github.event_name == 'create' && startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'create' && startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/download-artifact@v2
         with:
@@ -106,3 +106,20 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.pypi_pwd }}
+
+  test-deploy:
+    name: Test Deploy
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@v1.4.1
+        with:
+          user: __token__
+          password: ${{ secrets.pypi_test_pwd }}
+          repository_url: https://test.pypi.org/legacy/
+          skip_existing: true
