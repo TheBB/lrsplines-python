@@ -1,5 +1,9 @@
-import numpy as np
+from __future__ import annotations
+
 from math import pi
+
+import numpy as np
+
 
 def gen_knot(n, p, periodic):
     m = n + (periodic+2)
@@ -125,15 +129,14 @@ def write_object_creation(f, rational, pardim, clone=True):
             f.write('        vol2 = vol.clone()\n')
 
 def evaluate_curve():
-    result = """
+    return """
         u    = np.linspace(crv.start(0), crv.end(0), 13)
         pt   = crv(u)
         pt2  = crv2(u)
 """
-    return result
 
 def evaluate_surface():
-    result = """
+    return """
         u    = np.linspace(surf.start(0), surf.end(0), 9)
         v    = np.linspace(surf.start(1), surf.end(1), 9)
         U,V  = np.meshgrid(u,v)
@@ -141,10 +144,9 @@ def evaluate_surface():
         pt2  = surf2(U,V)
 
 """
-    return result
 
 def evaluate_volume():
-    result = """
+    return """
         u    = np.linspace(vol.start(0), vol.end(0), 7)
         v    = np.linspace(vol.start(1), vol.end(1), 7)
         w    = np.linspace(vol.start(2), vol.end(2), 7)
@@ -152,7 +154,6 @@ def evaluate_volume():
         pt   = vol(U,V,W)
         pt2  = vol2(U,V,W)
 """
-    return result
 
 
 

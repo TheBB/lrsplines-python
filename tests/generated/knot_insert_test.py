@@ -2,10 +2,13 @@
 # Generator    : generate_knot_insert.py
 # Date         : 2020-05-10
 # Git revision : b'81e0a57f88c16bccbea4294775eb8bac837367d6\n'
-import numpy as np
-import lrspline as lr
-from math import sqrt
+from __future__ import annotations
+
 import unittest
+
+import numpy as np
+
+import lrspline as lr
 
 
 class TestInsertKnot(unittest.TestCase):
