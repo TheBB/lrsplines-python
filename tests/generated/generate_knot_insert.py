@@ -1,8 +1,12 @@
-import numpy as np
-import subprocess
+from __future__ import annotations
+
 import datetime
 import os
+import subprocess
+
+import numpy as np
 from general import *
+
 
 def insert_knot(p,knot):
     obj_name   = ['', 'crv', 'surf', 'vol']
@@ -62,10 +66,7 @@ for baseP in [2,4,5]:
                     cp   = gen_controlpoints(n, dim, rational, periodic)
                     knot = [gen_knot(n[i], p[i], (i==0)*(periodic+1)-1) for i in list(range(pardim))]
                     f.write('    def test_' + get_name(n, p, dim, rational, periodic) + '(self):\n')
-                    if cp.shape[0] > 30:
-                        cp_str = repr(cp).replace('\n', '')
-                    else:
-                        cp_str = repr(cp)
+                    cp_str = repr(cp).replace('\n', '') if cp.shape[0] > 30 else repr(cp)
                     f.write('        controlpoints = np.'+cp_str+'\n')
                     write_basis(f, p, knot)
                     write_object_creation(f, rational, pardim)
