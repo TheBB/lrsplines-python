@@ -9,7 +9,7 @@ dependencies = [
     "numpy>=1.23",
 ]
 requires-python = ">=3.9,<4.0"
-readme = "README.md"
+readme = "README.rst"
 license = {text = "GPL-3-or-later"}
 
 [build-system]
