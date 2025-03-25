@@ -78,8 +78,8 @@ required-imports = ["from __future__ import annotations"]
 [tool.bumpversion]
 allow_dirty = false
 current_version = "1.13.0"
-commit = false
-tag = false
+commit = true
+tag = true
 parse = """(?x)
     (?P<major>[0-9]+)
     \\.(?P<minor>[0-9]+)
