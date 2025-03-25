@@ -1,5 +1,5 @@
 [project]
-name = "lrspline"
+name = "lrsplines"
 version = "1.14.1"
 description = "Python bindings for the LRSplines library"
 authors = [
@@ -18,8 +18,8 @@ build-backend = "pdm.backend"
 
 [tool.pdm.build]
 run-setuptools = true
-source-includes = ["submodules/LRSplines/src/*.cpp", "submodules/LRSplines/include/**/*.h", "pdm_build.py"]
-excludes = ["tests"]
+source-includes = ["lrspline", "submodules/LRSplines/src/*.cpp", "submodules/LRSplines/include/**/*.h", "pdm_build.py"]
+excludes = ["tests", "*.so"]
 
 [tool.pdm.dev-dependencies]
 dev = [
