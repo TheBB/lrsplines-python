@@ -1,6 +1,6 @@
 [project]
 name = "lrspline"
-version = "1.14.0"
+version = "1.14.1"
 description = "Python bindings for the LRSplines library"
 authors = [
     {name = "Eivind Fonn", email = "eivind.fonn@sintef.no"},
@@ -77,7 +77,7 @@ required-imports = ["from __future__ import annotations"]
 
 [tool.bumpversion]
 allow_dirty = false
-current_version = "1.14.0"
+current_version = "1.14.1"
 commit = true
 tag = true
 parse = """(?x)
