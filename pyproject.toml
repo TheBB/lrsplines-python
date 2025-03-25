@@ -1,14 +1,14 @@
 [project]
-name = "lrsplines"
+name = "lrspline"
 version = "1.13.0"
 description = "Python bindings for the LRSplines library"
 authors = [
     {name = "Eivind Fonn", email = "eivind.fonn@sintef.no"},
 ]
 dependencies = [
-    "numpy>=1.23",
+    "numpy>=2.0",
 ]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.rst"
 license = {text = "GPL-3-or-later"}
 
@@ -18,7 +18,8 @@ build-backend = "pdm.backend"
 
 [tool.pdm.build]
 run-setuptools = true
-includes = ["lrspline/raw.pyi", "py.typed"]
+source-includes = ["submodules/LRSplines/src/*.cpp", "submodules/LRSplines/include/**/*.h", "pdm_build.py"]
+excludes = ["tests"]
 
 [tool.pdm.dev-dependencies]
 dev = [
@@ -66,7 +67,6 @@ select = [
 ]
 ignore = [
     "E741",     # Ambiguous variable name
-    "UP007",    # Only if your project targets Python 3.9 or earlier
     "SIM115",   # Complains if we use __enter__ inside an __enter__ method
     "ISC001",   # Conflicts with rust formatting
     "TD003",    # Issue links for each todo comment

@@ -3,29 +3,27 @@ from __future__ import annotations
 import io
 import operator as op
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from functools import partial
 from itertools import chain, combinations_with_replacement, repeat
 from typing import (
     Any,
     BinaryIO,
-    Callable,
     Generic,
     Literal,
-    Optional,
     Protocol,
+    Self,
     SupportsFloat,
     TextIO,
     TypedDict,
     TypeVar,
-    Union,
     cast,
     overload,
 )
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from typing_extensions import Self, Unpack
+from typing_extensions import Unpack
 
 from . import raw
 
@@ -37,12 +35,12 @@ S = TypeVar("S")
 T = TypeVar("T")
 U = TypeVar("U")
 
-Direction = Union[int, Literal["u", "U", "v", "V", "w", "W"]]
+Direction = int | Literal["u", "U", "v", "V", "w", "W"]
 Edge = Literal["west", "east", "north", "south", "top", "bottom"]
-FArray = NDArray[np.float64]
-Scalar = Union[float, np.float64]
-Scalars = Union[Sequence[Scalar], FArray]
-ScalarOrScalars = Union[Scalar, Scalars]
+FArray = NDArray[np.floating]
+Scalar = float | np.floating
+Scalars = Sequence[Scalar] | FArray
+ScalarOrScalars = Scalar | Scalars
 
 
 class ConfigureKwargs(TypedDict, total=False):
@@ -59,10 +57,10 @@ class WritePsKwargs(TypedDict, total=False):
     nu: int
     nv: int
     close: bool
-    colorElements: Optional[Sequence[int]]
+    colorElements: Sequence[int] | None
 
 
-def _ensure_scalars(x: Union[ScalarOrScalars, tuple[Scalar]], dups: int = 1) -> list[float]:
+def _ensure_scalars(x: ScalarOrScalars | tuple[Scalar], dups: int = 1) -> list[float]:
     if isinstance(x, SupportsFloat) and not isinstance(x, np.ndarray):
         return [float(x)] * dups
     retval = list(map(float, x))
@@ -95,8 +93,8 @@ def _check_edge(edge: Iterable[Edge]) -> int:
     return side
 
 
-def _constructor(stream: Union[TextIO, BinaryIO, bytes, str]) -> type[LRSplineObject]:
-    if isinstance(stream, (TextIO, BinaryIO)):
+def _constructor(stream: TextIO | BinaryIO | bytes | str) -> type[LRSplineObject]:
+    if isinstance(stream, TextIO | BinaryIO):
         # if hasattr(stream, "readline"):
         peek = stream.readline()
         if not peek:
@@ -112,7 +110,7 @@ def _constructor(stream: Union[TextIO, BinaryIO, bytes, str]) -> type[LRSplineOb
     raise ValueError(f"Unknown LRSpline object type: '{peek}'")
 
 
-def _derivative_index(d: Union[tuple[int, int], tuple[int, int, int]]) -> tuple[int, int]:
+def _derivative_index(d: tuple[int, int] | tuple[int, int, int]) -> tuple[int, int]:
     """Calculate the derivative index of 'd' (a 2-tuple or 3-tuple) using
     LRSplines' derivative numbering scheme.  Return nderivs and index.
     """
@@ -127,31 +125,27 @@ def _derivative_index(d: Union[tuple[int, int], tuple[int, int, int]]) -> tuple[
 
 
 class DerivativeHelperFunc2d(Protocol):
-    def __call__(self, u: float, v: float, nderivs: int) -> FArray:
-        ...
+    def __call__(self, u: np.floating, v: np.floating, nderivs: int) -> FArray: ...
 
 
 class DerivativeHelperFunc3d(Protocol):
-    def __call__(self, u: float, v: float, w: float, nderivs: int) -> FArray:
-        ...
+    def __call__(self, u: np.floating, v: np.floating, w: np.floating, nderivs: int) -> FArray: ...
 
 
 @overload
 def _derivative_helper(
-    pts: Union[tuple[FArray, FArray], tuple[Scalar, Scalar]],
-    derivs: Union[tuple[int, int], Sequence[tuple[int, int]]],
+    pts: tuple[FArray, FArray] | tuple[Scalar, Scalar],
+    derivs: tuple[int, int] | Sequence[tuple[int, int]],
     func: DerivativeHelperFunc2d,
-) -> FArray:
-    ...
+) -> FArray: ...
 
 
 @overload
 def _derivative_helper(
-    pts: Union[tuple[FArray, FArray, FArray], tuple[Scalar, Scalar, Scalar]],
-    derivs: Union[tuple[int, int, int], Sequence[tuple[int, int, int]]],
+    pts: tuple[FArray, FArray, FArray] | tuple[Scalar, Scalar, Scalar],
+    derivs: tuple[int, int, int] | Sequence[tuple[int, int, int]],
     func: DerivativeHelperFunc3d,
-) -> FArray:
-    ...
+) -> FArray: ...
 
 
 def _derivative_helper(pts, derivs, func):  # type: ignore[no-untyped-def]
@@ -181,7 +175,7 @@ def _derivative_helper(pts, derivs, func):  # type: ignore[no-untyped-def]
         # If requesting a single point
         if singlept:
             # pts = cast(tuple[Scalar, ...], pts)
-            return cast(FArray, func(*pts, nderivs=nderiv)[index])
+            return cast("FArray", func(*pts, nderivs=nderiv)[index])
 
         # If requesting multiple points
         data_list = [func(*pt, nderivs=nderiv) for pt in zip(*pts)]
@@ -234,23 +228,21 @@ class BasisFunction(SimpleWrapper[raw.Basisfunction]):
         retval = np.array([self.w.evaluate(up, vp, True, True) for up, vp in zip(u.flatten(), v.flatten())])
         return retval.reshape(u.shape)
 
-    def derivative(
-        self, *pts: Union[Scalar, FArray], d: Union[tuple[int, int], tuple[int, int, int]] = (1, 1)
-    ) -> FArray:
+    def derivative(self, *pts: Scalar | FArray, d: tuple[int, int] | tuple[int, int, int] = (1, 1)) -> FArray:
         if self.nvariate == 2:
 
-            def wrapper_2d(u: float, v: float, nderivs: int) -> FArray:
+            def wrapper_2d(u: np.floating, v: np.floating, nderivs: int) -> FArray:
                 return self.w.evaluate(u, v, nderivs, True, True)
 
-            pts = cast(Union[tuple[Scalar, Scalar], tuple[FArray, FArray]], pts)
-            d = cast(tuple[int, int], d)
+            pts = cast("tuple[Scalar, Scalar] | tuple[FArray, FArray]", pts)
+            d = cast("tuple[int, int]", d)
             return _derivative_helper(pts, d, wrapper_2d)
 
-        def wrapper_3d(u: float, v: float, w: float, nderivs: int) -> FArray:
+        def wrapper_3d(u: np.floating, v: np.floating, w: np.floating, nderivs: int) -> FArray:
             return self.w.evaluate(u, v, w, nderivs, True, True, True)
 
-        pts = cast(Union[tuple[Scalar, Scalar, Scalar], tuple[FArray, FArray, FArray]], pts)
-        d = cast(tuple[int, int, int], d)
+        pts = cast("tuple[Scalar, Scalar, Scalar] | tuple[FArray, FArray, FArray]", pts)
+        d = cast("tuple[int, int, int]", d)
         return _derivative_helper(pts, d, wrapper_3d)
 
     def support(self) -> Iterator[Element]:
@@ -285,12 +277,10 @@ class Element(SimpleWrapper[raw.Element]):
         return self.w.getDim()
 
     @overload
-    def start(self) -> tuple[float, ...]:
-        ...
+    def start(self) -> tuple[float, ...]: ...
 
     @overload
-    def start(self, direction: Direction) -> float:
-        ...
+    def start(self, direction: Direction) -> float: ...
 
     def start(self, direction=None):  # type: ignore[no-untyped-def]
         if direction is None:
@@ -298,12 +288,10 @@ class Element(SimpleWrapper[raw.Element]):
         return self.w.getParmin(_check_direction(direction, self.pardim))
 
     @overload
-    def end(self) -> tuple[float, ...]:
-        ...
+    def end(self) -> tuple[float, ...]: ...
 
     @overload
-    def end(self, direction: Direction) -> float:
-        ...
+    def end(self, direction: Direction) -> float: ...
 
     def end(self, direction=None):  # type: ignore[no-untyped-def]
         if direction is None:
@@ -311,12 +299,10 @@ class Element(SimpleWrapper[raw.Element]):
         return self.w.getParmax(_check_direction(direction, self.pardim))
 
     @overload
-    def span(self) -> tuple[tuple[float, float], ...]:
-        ...
+    def span(self) -> tuple[tuple[float, float], ...]: ...
 
     @overload
-    def span(self, direction: Direction) -> tuple[float, float]:
-        ...
+    def span(self, direction: Direction) -> tuple[float, float]: ...
 
     def span(self, direction=None):  # type: ignore[no-untyped-def]
         if direction is None:
@@ -347,31 +333,25 @@ I = TypeVar("I", raw.Meshline, raw.MeshRectangle)
 class MeshInterface(ABC, SimpleWrapper[I]):
     @property
     @abstractmethod
-    def constant_direction(self) -> int:
-        ...
+    def constant_direction(self) -> int: ...
 
     @property
     @abstractmethod
-    def value(self) -> float:
-        ...
+    def value(self) -> float: ...
 
     @property
     @abstractmethod
-    def variable_directions(self) -> tuple[int, ...]:
-        ...
+    def variable_directions(self) -> tuple[int, ...]: ...
 
     @property
     @abstractmethod
-    def multiplicity(self) -> int:
-        ...
+    def multiplicity(self) -> int: ...
 
     @overload
-    def span(self) -> tuple[tuple[float, float], ...]:
-        ...
+    def span(self) -> tuple[tuple[float, float], ...]: ...
 
     @overload
-    def span(self, direction: Direction) -> tuple[float, float]:
-        ...
+    def span(self, direction: Direction) -> tuple[float, float]: ...
 
     @abstractmethod
     def span(self, direction=None):  # type: ignore[no-untyped-def]
@@ -386,12 +366,10 @@ class MeshInterface(ABC, SimpleWrapper[I]):
         return cls + "(" + const + "; " + ", ".join(variables) + ")"
 
     @overload
-    def start(self) -> tuple[float, ...]:
-        ...
+    def start(self) -> tuple[float, ...]: ...
 
     @overload
-    def start(self, direction: Direction) -> float:
-        ...
+    def start(self, direction: Direction) -> float: ...
 
     def start(self, direction=None):  # type: ignore[no-untyped-def]
         if direction is None:
@@ -399,12 +377,10 @@ class MeshInterface(ABC, SimpleWrapper[I]):
         return self.span(direction)[0]
 
     @overload
-    def end(self) -> tuple[float, ...]:
-        ...
+    def end(self) -> tuple[float, ...]: ...
 
     @overload
-    def end(self, direction: Direction) -> float:
-        ...
+    def end(self, direction: Direction) -> float: ...
 
     def end(self, direction=None):  # type: ignore[no-untyped-def]
         if direction is None:
@@ -482,9 +458,9 @@ class ListLikeView(Generic[S, T, U]):
 
     def __init__(self, obj: S, lenf: str, itemf: str, iterf: str, wrapf: Callable[[T], U]):
         self.obj = obj
-        self.lenf = cast(Callable[[S], int], op.methodcaller(lenf))
-        self.itemf = cast(Callable[[S], Callable[[int], T]], op.attrgetter(itemf))
-        self.iterf = cast(Callable[[S], Iterator[T]], op.methodcaller(iterf))
+        self.lenf = cast("Callable[[S], int]", op.methodcaller(lenf))
+        self.itemf = cast("Callable[[S], Callable[[int], T]]", op.attrgetter(itemf))
+        self.iterf = cast("Callable[[S], Iterator[T]]", op.methodcaller(iterf))
         self.wrapf = wrapf
 
     def __len__(self) -> int:
@@ -549,16 +525,15 @@ class LRSplineObject(ABC, Generic[R]):
         self.basis = BasisView(self)
 
     @staticmethod
-    def read_many(stream: Union[BinaryIO, TextIO], renumber: bool = True) -> list[LRSplineObject]:
+    def read_many(stream: BinaryIO | TextIO, renumber: bool = True) -> list[LRSplineObject]:
         contents = stream.read()
         splitter = b"# LRSPLINE" if isinstance(contents, bytes) else "# LRSPLINE"
         contents_list = contents.split(splitter)[1:]  # type: ignore[arg-type]
-        contents_list = [splitter + c for c in contents_list]  # type: ignore[operator]
+        contents_list = [splitter + c for c in contents_list]  # type: ignore[operator,assignment]
         return [_constructor(c)(c, renumber=renumber) for c in contents_list]
 
     @abstractmethod
-    def corners(self) -> FArray:
-        ...
+    def corners(self) -> FArray: ...
 
     def __len__(self) -> int:
         return len(self.basis)
@@ -598,12 +573,10 @@ class LRSplineObject(ABC, Generic[R]):
         return self.w.write(stream)
 
     @overload
-    def start(self) -> tuple[float, ...]:
-        ...
+    def start(self) -> tuple[float, ...]: ...
 
     @overload
-    def start(self, direction: Direction) -> float:
-        ...
+    def start(self, direction: Direction) -> float: ...
 
     def start(self, direction=None):  # type: ignore[no-untyped-def]
         if direction is None:
@@ -611,12 +584,10 @@ class LRSplineObject(ABC, Generic[R]):
         return self.w.startparam(_check_direction(direction, self.pardim))
 
     @overload
-    def end(self) -> tuple[float, ...]:
-        ...
+    def end(self) -> tuple[float, ...]: ...
 
     @overload
-    def end(self, direction: Direction) -> float:
-        ...
+    def end(self, direction: Direction) -> float: ...
 
     def end(self, direction=None):  # type: ignore[no-untyped-def]
         if direction is None:
@@ -624,12 +595,10 @@ class LRSplineObject(ABC, Generic[R]):
         return self.w.endparam(_check_direction(direction, self.pardim))
 
     @overload
-    def span(self) -> tuple[tuple[float, float], ...]:
-        ...
+    def span(self) -> tuple[tuple[float, float], ...]: ...
 
     @overload
-    def span(self, direction: Direction) -> tuple[float, float]:
-        ...
+    def span(self, direction: Direction) -> tuple[float, float]: ...
 
     def span(self, direction=None):  # type: ignore[no-untyped-def]
         if direction is None:
@@ -638,12 +607,10 @@ class LRSplineObject(ABC, Generic[R]):
         return (self.w.startparam(direction), self.w.endparam(direction))
 
     @overload
-    def order(self) -> tuple[int, ...]:
-        ...
+    def order(self) -> tuple[int, ...]: ...
 
     @overload
-    def order(self, direction: Direction) -> int:
-        ...
+    def order(self, direction: Direction) -> int: ...
 
     def order(self, direction=None):  # type: ignore[no-untyped-def]
         if direction is None:
@@ -651,12 +618,10 @@ class LRSplineObject(ABC, Generic[R]):
         return self.w.order(_check_direction(direction, self.pardim))
 
     @overload
-    def knots(self, *, with_multiplicities: bool = ...) -> tuple[FArray, ...]:
-        ...
+    def knots(self, *, with_multiplicities: bool = ...) -> tuple[FArray, ...]: ...
 
     @overload
-    def knots(self, direction: Direction, *, with_multiplicities: bool = ...) -> FArray:
-        ...
+    def knots(self, direction: Direction, *, with_multiplicities: bool = ...) -> FArray: ...
 
     def knots(self, direction=None, with_multiplicities=False):  # type: ignore[no-untyped-def]
         knots = self.w.getGlobalKnotVector() if with_multiplicities else self.w.getGlobalUniqueKnotVector()
@@ -668,8 +633,8 @@ class LRSplineObject(ABC, Generic[R]):
 
     def refine(
         self,
-        objects: Union[Sequence[float], Sequence[BasisFunction], Sequence[Element]],
-        beta: Optional[float] = None,
+        objects: Sequence[float] | Sequence[BasisFunction] | Sequence[Element],
+        beta: float | None = None,
     ) -> None:
         if not objects:
             raise ValueError("Refinement list must be non-empty")
@@ -677,11 +642,11 @@ class LRSplineObject(ABC, Generic[R]):
             assert isinstance(beta, float)
             self.w.refineByDimensionIncrease(np.asarray(objects), beta)
         elif isinstance(objects[0], BasisFunction):
-            objects = cast(Sequence[BasisFunction], objects)
+            objects = cast("Sequence[BasisFunction]", objects)
             ids = [bf.id for bf in objects]
             self.w.refineBasisFunction(ids)
         elif isinstance(objects[0], Element):
-            objects = cast(Sequence[Element], objects)
+            objects = cast("Sequence[Element]", objects)
             ids = [bf.id for bf in objects]
             self.w.refineElement(ids)
         else:
@@ -706,7 +671,7 @@ class LRSplineObject(ABC, Generic[R]):
     def generate_ids(self) -> None:
         self.w.generateIDs()
 
-    def bezier_extraction(self, arg: Union[Element, int]) -> FArray:
+    def bezier_extraction(self, arg: Element | int) -> FArray:
         if isinstance(arg, Element):
             return self.w.getBezierExtraction(arg.id)
         return self.w.getBezierExtraction(arg)  # int
@@ -723,51 +688,44 @@ class LRSplineObject(ABC, Generic[R]):
         return self.basis[i].controlpoint
 
     @abstractmethod
-    def element_at(self, *args: float) -> Element:
-        ...
+    def element_at(self, *args: float) -> Element: ...
 
     @abstractmethod
-    def __call__(self, *args: Union[FArray, float], iel: int = ...) -> FArray:
-        ...
+    def __call__(self, *args: FArray | float, iel: int = ...) -> FArray: ...
 
 
 class LRSplineSurface(LRSplineObject[raw.LRSurface]):
     @overload
-    def __init__(self) -> None:
-        ...
+    def __init__(self) -> None: ...
 
     @overload
-    def __init__(self, surface: raw.LRSurface) -> None:
-        ...
+    def __init__(self, surface: raw.LRSurface) -> None: ...
 
     @overload
-    def __init__(self, data: Union[BinaryIO, TextIO, str, bytes]) -> None:
-        ...
+    def __init__(self, data: BinaryIO | TextIO | str | bytes) -> None: ...
 
     @overload
-    def __init__(self, n1: int, n2: int) -> None:
-        ...
+    def __init__(self, n1: int, n2: int) -> None: ...
 
     @overload
-    def __init__(self, n1: int, n2: int, order_u: int, order_v: int) -> None:
-        ...
+    def __init__(self, n1: int, n2: int, order_u: int, order_v: int) -> None: ...
 
     @overload
-    def __init__(self, n1: int, n2: int, order_u: int, order_v: int, knot1: Scalars, knot2: Scalars) -> None:
-        ...
+    def __init__(
+        self, n1: int, n2: int, order_u: int, order_v: int, knot1: Scalars, knot2: Scalars
+    ) -> None: ...
 
     @overload
     def __init__(
         self, n1: int, n2: int, order_u: int, order_v: int, knot1: Scalars, knot2: Scalars, cps: ArrayLike
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def __init__(self, *args, renumber=True):  # type: ignore[no-untyped-def]
         if len(args) == 0:
             w = raw.LRSurface()
         elif isinstance(args[0], raw.LRSurface):
             w = args[0]
-        elif isinstance(args[0], (io.IOBase, str, bytes)):
+        elif isinstance(args[0], io.IOBase | str | bytes):
             w = raw.LRSurface()
             w.read(args[0])  # type: ignore[arg-type]
         elif len(args) == 2:  # specify (n1,n2)
@@ -815,13 +773,12 @@ class LRSplineSurface(LRSplineObject[raw.LRSurface]):
         self,
         arg: MeshLine,
         /,
-        direction: Optional[Direction] = ...,
-        value: Optional[float] = ...,
-        start: Optional[float] = ...,
-        end: Optional[float] = ...,
-        multiplicity: Optional[int] = ...,
-    ) -> None:
-        ...
+        direction: Direction | None = ...,
+        value: float | None = ...,
+        start: float | None = ...,
+        end: float | None = ...,
+        multiplicity: int | None = ...,
+    ) -> None: ...
 
     @overload
     def insert(
@@ -830,9 +787,8 @@ class LRSplineSurface(LRSplineObject[raw.LRSurface]):
         value: float,
         start: float,
         end: float,
-        multiplicity: Optional[int] = ...,
-    ) -> None:
-        ...
+        multiplicity: int | None = ...,
+    ) -> None: ...
 
     def insert(self, *args, direction=None, value=None, start=None, end=None, multiplicity=None):  # type: ignore[no-untyped-def]
         if len(args) > 1:
@@ -868,12 +824,10 @@ class LRSplineSurface(LRSplineObject[raw.LRSurface]):
             self.w.insert_const_v_edge(value, start, end, multiplicity)
 
     @overload
-    def evaluate(self, u: FArray, v: FArray, iel: int = ...) -> FArray:
-        ...
+    def evaluate(self, u: FArray, v: FArray, iel: int = ...) -> FArray: ...
 
     @overload
-    def evaluate(self, u: float, v: float, iel: int = ...) -> FArray:
-        ...
+    def evaluate(self, u: float, v: float, iel: int = ...) -> FArray: ...
 
     def evaluate(self, u, v, iel=-1):  # type: ignore[no-untyped-def]
         if isinstance(u, np.ndarray) and isinstance(v, np.ndarray):
@@ -882,15 +836,13 @@ class LRSplineSurface(LRSplineObject[raw.LRSurface]):
         return self.w.point(u, v, iEl=iel)
 
     @overload
-    def derivative(self, u: FArray, v: FArray, d: tuple[int, int] = ..., iel: int = ...) -> FArray:
-        ...
+    def derivative(self, u: FArray, v: FArray, d: tuple[int, int] = ..., iel: int = ...) -> FArray: ...
 
     @overload
-    def derivative(self, u: float, v: float, d: tuple[int, int] = ..., iel: int = ...) -> FArray:
-        ...
+    def derivative(self, u: float, v: float, d: tuple[int, int] = ..., iel: int = ...) -> FArray: ...
 
     def derivative(self, u, v, d=(1, 1), iel=-1):  # type: ignore[no-untyped-def]
-        def wrapper(u: float, v: float, nderivs: int) -> FArray:
+        def wrapper(u: np.floating, v: np.floating, nderivs: int) -> FArray:
             return self.w.point(u, v, nderivs, iEl=iel)
 
         return _derivative_helper((u, v), d, wrapper)
@@ -906,24 +858,19 @@ class LRSplineSurface(LRSplineObject[raw.LRSurface]):
 
 class LRSplineVolume(LRSplineObject[raw.LRVolume]):
     @overload
-    def __init__(self) -> None:
-        ...
+    def __init__(self) -> None: ...
 
     @overload
-    def __init__(self, surface: raw.LRVolume) -> None:
-        ...
+    def __init__(self, surface: raw.LRVolume) -> None: ...
 
     @overload
-    def __init__(self, data: Union[BinaryIO, TextIO, str, bytes]) -> None:
-        ...
+    def __init__(self, data: BinaryIO | TextIO | str | bytes) -> None: ...
 
     @overload
-    def __init__(self, n1: int, n2: int, n3: int) -> None:
-        ...
+    def __init__(self, n1: int, n2: int, n3: int) -> None: ...
 
     @overload
-    def __init__(self, n1: int, n2: int, n3: int, order_u: int, order_v: int, order_w: int) -> None:
-        ...
+    def __init__(self, n1: int, n2: int, n3: int, order_u: int, order_v: int, order_w: int) -> None: ...
 
     @overload
     def __init__(
@@ -937,8 +884,7 @@ class LRSplineVolume(LRSplineObject[raw.LRVolume]):
         knot1: Scalars,
         knot2: Scalars,
         knot3: Scalars,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @overload
     def __init__(
@@ -953,15 +899,14 @@ class LRSplineVolume(LRSplineObject[raw.LRVolume]):
         knot2: Scalars,
         knot3: Scalars,
         cps: ArrayLike,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def __init__(self, *args, renumber=True):  # type: ignore[no-untyped-def]
         if len(args) == 0:
             w = raw.LRVolume()
         elif isinstance(args[0], raw.LRVolume):
             w = args[0]
-        elif isinstance(args[0], (io.IOBase, str, bytes)):
+        elif isinstance(args[0], io.IOBase | str | bytes):
             w = raw.LRVolume()
             w.read(args[0])  # type: ignore[arg-type]
         elif len(args) == 3:  # only specify number of functions (n1,n2,n3)
@@ -1008,12 +953,10 @@ class LRSplineVolume(LRSplineObject[raw.LRVolume]):
         self.w.insert_line(mr.w)
 
     @overload
-    def evaluate(self, u: FArray, v: FArray, w: FArray, iel: int = ...) -> FArray:
-        ...
+    def evaluate(self, u: FArray, v: FArray, w: FArray, iel: int = ...) -> FArray: ...
 
     @overload
-    def evaluate(self, u: float, v: float, w: float, iel: int = ...) -> FArray:
-        ...
+    def evaluate(self, u: float, v: float, w: float, iel: int = ...) -> FArray: ...
 
     def evaluate(self, u, v, w, iel=-1):  # type: ignore[no-untyped-def]
         if isinstance(u, np.ndarray) and isinstance(v, np.ndarray) and isinstance(w, np.ndarray):
@@ -1026,17 +969,15 @@ class LRSplineVolume(LRSplineObject[raw.LRVolume]):
     @overload
     def derivative(
         self, u: FArray, v: FArray, w: FArray, d: tuple[int, int, int] = ..., iel: int = ...
-    ) -> FArray:
-        ...
+    ) -> FArray: ...
 
     @overload
     def derivative(
         self, u: float, v: float, w: float, d: tuple[int, int, int] = ..., iel: int = ...
-    ) -> FArray:
-        ...
+    ) -> FArray: ...
 
     def derivative(self, u, v, w, d=(1, 1, 1), iel=-1):  # type: ignore[no-untyped-def]
-        def wrapper(u: float, v: float, w: float, nderivs: int) -> FArray:
+        def wrapper(u: np.floating, v: np.floating, w: np.floating, nderivs: int) -> FArray:
             return self.w.point(u, v, w, nderivs, iEl=iel)
 
         return _derivative_helper((u, v, w), d, wrapper)
