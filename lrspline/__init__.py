@@ -27,7 +27,7 @@ from typing_extensions import Unpack
 
 from . import raw
 
-__version__ = "1.14.1"
+__version__ = "1.14.2"
 
 L = TypeVar("L", bound="LRSplineObject")
 R = TypeVar("R", bound=raw.LRSplineObject)
