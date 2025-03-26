@@ -7,6 +7,7 @@ from collections.abc import Callable, Iterable, Iterator, Sequence
 from functools import partial
 from itertools import chain, combinations_with_replacement, repeat
 from typing import (
+    TYPE_CHECKING,
     Any,
     BinaryIO,
     Generic,
@@ -17,15 +18,18 @@ from typing import (
     TextIO,
     TypedDict,
     TypeVar,
+    Unpack,
     cast,
     overload,
 )
 
 import numpy as np
-from numpy.typing import ArrayLike, NDArray
-from typing_extensions import Unpack
+from numpy.typing import NDArray
 
 from . import raw
+
+if TYPE_CHECKING:
+    from numpy.typing import ArrayLike
 
 __version__ = "1.14.3"
 

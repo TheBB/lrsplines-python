@@ -21,15 +21,6 @@ run-setuptools = true
 source-includes = ["submodules/LRSplines/src/*.cpp", "submodules/LRSplines/include/**/*.h", "pdm_build.py"]
 excludes = ["tests"]
 
-[tool.pdm.dev-dependencies]
-dev = [
-    "bump-my-version>=0.17.4",
-    "pytest>=8.0.1",
-    "ruff>=0.2.2",
-    "mypy>=1.8.0",
-    "typing-extensions>=4.9.0",
-]
-
 [tool.mypy]
 plugins = ["numpy.typing.mypy_plugin"]
 files = ["lrspline/**/*.py"]
@@ -114,3 +105,11 @@ filename = "pyproject.toml"
 
 [[tool.bumpversion.files]]
 filename = "lrspline/__init__.py"
+
+[dependency-groups]
+dev = [
+    "bump-my-version>=0.17.4",
+    "pytest>=8.0.1",
+    "ruff>=0.2.2",
+    "mypy>=1.8.0",
+]
