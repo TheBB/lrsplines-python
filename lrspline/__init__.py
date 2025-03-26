@@ -31,7 +31,7 @@ from . import raw
 if TYPE_CHECKING:
     from numpy.typing import ArrayLike
 
-__version__ = "1.15.0"
+__version__ = "1.15.1"
 
 L = TypeVar("L", bound="LRSplineObject")
 R = TypeVar("R", bound=raw.LRSplineObject)
